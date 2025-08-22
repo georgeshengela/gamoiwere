@@ -61,7 +61,6 @@ Dockerfile
 replit.nix
 render.yaml
 deploy-check.js
-attached_assets/
 
 # Environment files (except .env.example)
 .env

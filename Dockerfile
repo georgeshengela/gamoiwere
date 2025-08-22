@@ -30,6 +30,9 @@ RUN npm ci --silent
 # Copy source code
 COPY . .
 
+# Verify assets are copied (for debugging)
+RUN ls -la attached_assets/ | head -5 && echo "✅ Assets found!" || echo "❌ attached_assets directory missing"
+
 # Build the application
 RUN npm run build
 
