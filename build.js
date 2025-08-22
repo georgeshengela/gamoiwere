@@ -14,7 +14,7 @@ async function build() {
 
     console.log('Building backend...');
     // Build production server that has no vite dependencies
-    await execAsync('esbuild server/prod-server.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --outfile=dist/index.js');
+    await execAsync('esbuild server/prod-server.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/index.js');
     console.log('Backend built successfully!');
 
     console.log('Build completed!');

@@ -1,6 +1,0 @@
-# ads.txt file for GAMOIWERE.GE
-# This file indicates that no advertising is currently served on this domain
-# For e-commerce sites, this helps prevent unauthorized ad placements
-
-# No ads currently served
-# Contact: admin@gamoiwere.ge for advertising inquiries

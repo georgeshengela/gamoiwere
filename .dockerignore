@@ -53,3 +53,21 @@ test/
 tests/
 *.test.js
 *.test.ts
+
+# Deployment and development files
+Dockerfile
+.dockerignore
+.replit
+replit.nix
+render.yaml
+deploy-check.js
+attached_assets/
+
+# Environment files (except .env.example)
+.env
+.env.*
+!.env.example
+
+# Additional documentation
+RENDER_DEPLOYMENT_SUMMARY.md
+MOBILE_APP_DEPLOYMENT.md
