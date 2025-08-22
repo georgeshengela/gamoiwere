@@ -9,7 +9,7 @@ const execAsync = promisify(exec);
 async function build() {
   try {
     console.log('Building frontend...');
-    await execAsync('vite build');
+    await execAsync('npx vite build');
     console.log('Frontend built successfully!');
 
     console.log('Building backend...');

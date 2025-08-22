@@ -33,10 +33,10 @@ COPY . .
 # Verify assets are copied (for debugging)
 RUN ls -la attached_assets/ | head -5 && echo "✅ Assets found!" || echo "❌ attached_assets directory missing"
 
-# Build the application
+# Build the application (needs dev dependencies)
 RUN node build.js
 
-# Remove dev dependencies after build to reduce image size
+# Remove dev dependencies after build to reduce image size  
 RUN npm prune --production --silent
 
 # Create non-root user for security
