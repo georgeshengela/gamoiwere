@@ -19,7 +19,7 @@ function log(message: string) {
 
 // Simple static file serving for production
 function serveStatic(app: express.Express) {
-  const distPath = path.resolve(process.cwd(), "public");
+  const distPath = path.resolve(process.cwd(), "dist/public");
 
   if (!fs.existsSync(distPath)) {
     throw new Error(
