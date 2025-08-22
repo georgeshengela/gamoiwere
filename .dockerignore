@@ -1,0 +1,55 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Build outputs
+dist
+build
+
+# Development files
+.env.local
+.env.development
+.env.test
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage
+*.lcov
+
+# Temporary folders
+.tmp
+.cache
+
+# Documentation
+README.md
+docs/
+
+# Mobile app directory (not needed for web deployment)
+gamoiwere-mobile/
+
+# Test files
+test/
+tests/
+*.test.js
+*.test.ts

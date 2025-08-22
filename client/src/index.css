@@ -1,0 +1,222 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom scrollbar styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #bbb;
+}
+
+/* Hide scrollbar but maintain functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Text truncation utilities for mobile cart */
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* Product detail page scrolling fix */
+/* Product card styling */
+.product-card,
+.rounded-2xl {
+  border-radius: calc(var(--radius) - 2px) !important;
+  transition: none !important;
+}
+
+/* Override hover effects for product cards */
+.product-card:hover,
+.rounded-2xl:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.product-gallery-container {
+  position: sticky;
+  top: 24px;
+  max-height: calc(100vh - 150px);
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+@font-face {
+  font-family: 'MarkGEO-Regular';
+  src: url('https://webstatic.bog.ge/fonts/markgeo/MarkGEO-Regular/MarkGEO-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'MarkGEOCAPS-Regular';
+  src: url('https://webstatic.bog.ge/fonts/markgeo/MarkGEOCAPS-Regular/MarkGEOCAPS-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --background: 0 0% 98%;
+  --foreground: 0 0% 10%;
+  --muted: 60 4.8% 95.9%;
+  --muted-foreground: 25 5.3% 44.7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 10%;
+  --border: 20 5.9% 90%;
+  --input: 20 5.9% 90%;
+  --primary: 258 81% 57%;
+  --primary-foreground: 211 100% 99%;
+  --primary-hover: 263 76% 66%;
+  --secondary: 0 84.2% 60.2%;
+  --secondary-foreground: 60 9.1% 97.8%;
+  --accent: 60 4.8% 95.9%;
+  --accent-foreground: 24 9.8% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  --ring: 263 76% 66%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --primary: 258 81% 57%;
+  --primary-foreground: 211 100% 99%;
+  --primary-hover: 263 76% 66%;
+  --secondary: 0 84.2% 60.2%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 263 76% 66%;
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-white text-foreground font-markgeo;
+  }
+
+  .caps {
+    @apply font-markgeocaps;
+  }
+  
+  .product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  }
+  
+  .product-card {
+    transition: all 0.3s ease;
+  }
+  
+  /* Button hover effect */
+  .btn-primary:hover,
+  .hover:btn-primary:hover,
+  button[data-state="open"]:where(.btn,.btn-primary),
+  .bg-primary:hover {
+    background-color: hsl(var(--primary-hover)) !important;
+    border-color: hsl(var(--primary-hover)) !important;
+  }
+
+  /* Update button component hover styles */
+  .bg-primary {
+    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+  }
+}
+
+/* Custom scrollbar styles */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #e5e7eb;
+  border-radius: 20px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: #d1d5db;
+}
+
+/* Thinner scrollbar for mobile gallery */
+@media (max-width: 768px) {
+  .order-2.md\:order-1::-webkit-scrollbar {
+    height: 3px;
+  }
+  
+  .order-2.md\:order-1::-webkit-scrollbar-thumb {
+    background-color: rgba(128, 128, 128, 0.3);
+  }
+  
+  .order-2.md\:order-1 .scrollbar-thin::-webkit-scrollbar {
+    height: 3px;
+  }
+  
+  .order-2.md\:order-1 .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgba(128, 128, 128, 0.3);
+  }
+}
+
+/* Animated marquee ticker */
+@keyframes marquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 25s linear infinite;
+}
+
+/* Fix inline CSS issues from Radix UI components */
+input[aria-hidden="true"] {
+  transform: translateX(-100%) !important;
+  position: absolute !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  margin: 0 !important;
+  width: 16px !important;
+  height: 16px !important;
+}

@@ -1,0 +1,215 @@
+"Id": "tr-821139162",
+          "ErrorCode": "Ok",
+          "HasError": false,
+          "ProviderType": "Trendyol",
+          "UpdatedTime": "2025-05-18T12:04:19.471",
+          "CreatedTime": "2024-10-21T11:43:13.812",
+          "Title": "საზაფხულო თეთრეული უამრავი ჩამოსხმის გრძელი ყდის ტექსტურით თეთრი მამაკაცის პერანგზე",
+          "OriginalTitle": "Yazlık Keten Bol Kalıp Uzun Kollu Dokulu Oversize Beyaz Erkek Gömlek",
+          "CategoryId": "tr-g2c75",
+          "ExternalCategoryId": "g2c75",
+          "VendorId": "tr-485379",
+          "VendorName": "KHALİF",
+          "VendorDisplayName": "KHALİF",
+          "VendorScore": 0,
+          "BrandId": "tr-1007341",
+          "BrandName": "BEYMODA",
+          "TaobaoItemUrl": "https://www.trendyol.com/beymoda/yazlik-keten-bol-kalip-uzun-kollu-dokulu-oversize-beyaz-erkek-gomlek-p-126437808",
+          "ExternalItemUrl": "https://www.trendyol.com/beymoda/yazlik-keten-bol-kalip-uzun-kollu-dokulu-oversize-beyaz-erkek-gomlek-p-126437808",
+          "MainPictureUrl": "https://cdn.dsmcdn.com/ty1645/prod/QC/20250301/03/6e87597e-432e-3c83-af1f-44a1fca34c97/1_org_zoom.jpg",
+          "StuffStatus": "New",
+          "Volume": 0,
+          "Price": {
+            "OriginalPrice": 459,
+            "MarginPrice": 459,
+            "OriginalCurrencyCode": "TRY",
+            "ConvertedPriceList": {
+              "Internal": {
+                "Price": 36.32,
+                "Sign": "₾",
+                "Code": "GEL"
+              },
+              "DisplayedMoneys": [
+                {
+                  "Price": 36.32,
+                  "Sign": "₾",
+                  "Code": "GEL"
+                }
+              ]
+            },
+            "ConvertedPrice": "36.32₾",
+            "ConvertedPriceWithoutSign": "36.32",
+            "CurrencySign": "₾",
+            "CurrencyName": "GEL",
+            "IsDeliverable": false,
+            "DeliveryPrice": {
+              "OriginalPrice": 0,
+              "MarginPrice": 0,
+              "OriginalCurrencyCode": "TRY",
+              "ConvertedPriceList": {
+                "Internal": {
+                  "Price": 0,
+                  "Sign": "₾",
+                  "Code": "GEL"
+                },
+                "DisplayedMoneys": [
+                  {
+                    "Price": 0,
+                    "Sign": "₾",
+                    "Code": "GEL"
+                  }
+                ]
+              }
+            },
+            "OneItemDeliveryPrice": {
+              "OriginalPrice": 0,
+              "MarginPrice": 0,
+              "OriginalCurrencyCode": "TRY",
+              "ConvertedPriceList": {
+                "Internal": {
+                  "Price": 0,
+                  "Sign": "₾",
+                  "Code": "GEL"
+                },
+                "DisplayedMoneys": [
+                  {
+                    "Price": 0,
+                    "Sign": "₾",
+                    "Code": "GEL"
+                  }
+                ]
+              }
+            },
+            "PriceWithoutDelivery": {
+              "OriginalPrice": 459,
+              "MarginPrice": 459,
+              "OriginalCurrencyCode": "TRY",
+              "ConvertedPriceList": {
+                "Internal": {
+                  "Price": 36.32,
+                  "Sign": "₾",
+                  "Code": "GEL"
+                },
+                "DisplayedMoneys": [
+                  {
+                    "Price": 36.32,
+                    "Sign": "₾",
+                    "Code": "GEL"
+                  }
+                ]
+              }
+            },
+            "OneItemPriceWithoutDelivery": {
+              "OriginalPrice": 459,
+              "MarginPrice": 459,
+              "OriginalCurrencyCode": "TRY",
+              "ConvertedPriceList": {
+                "Internal": {
+                  "Price": 36.32,
+                  "Sign": "₾",
+                  "Code": "GEL"
+                },
+                "DisplayedMoneys": [
+                  {
+                    "Price": 36.32,
+                    "Sign": "₾",
+                    "Code": "GEL"
+                  }
+                ]
+              }
+            }
+          },
+          "MasterQuantity": 99999,
+          "Pictures": [
+            {
+              "Url": "https://cdn.dsmcdn.com/ty1645/prod/QC/20250301/03/6e87597e-432e-3c83-af1f-44a1fca34c97/1_org_zoom.jpg",
+              "Small": {
+                "Url": "https://cdn.dsmcdn.com/ty1645/prod/QC/20250301/03/6e87597e-432e-3c83-af1f-44a1fca34c97/1_org_zoom.jpg"
+              },
+              "Medium": {
+                "Url": "https://cdn.dsmcdn.com/ty1645/prod/QC/20250301/03/6e87597e-432e-3c83-af1f-44a1fca34c97/1_org_zoom.jpg"
+              },
+              "Large": {
+                "Url": "https://cdn.dsmcdn.com/ty1645/prod/QC/20250301/03/6e87597e-432e-3c83-af1f-44a1fca34c97/1_org_zoom.jpg"
+              },
+              "IsMain": true
+            },
+            {
+              "Url": "https://cdn.dsmcdn.com/ty1640/prod/QC/20250219/02/0c754f5f-d433-3ba2-b90b-06f60f543045/1_org_zoom.jpg",
+              "Small": {
+                "Url": "https://cdn.dsmcdn.com/ty1640/prod/QC/20250219/02/0c754f5f-d433-3ba2-b90b-06f60f543045/1_org_zoom.jpg"
+              },
+              "Medium": {
+                "Url": "https://cdn.dsmcdn.com/ty1640/prod/QC/20250219/02/0c754f5f-d433-3ba2-b90b-06f60f543045/1_org_zoom.jpg"
+              },
+              "Large": {
+                "Url": "https://cdn.dsmcdn.com/ty1640/prod/QC/20250219/02/0c754f5f-d433-3ba2-b90b-06f60f543045/1_org_zoom.jpg"
+              },
+              "IsMain": false
+            },
+            {
+              "Url": "https://cdn.dsmcdn.com/ty1645/prod/QC/20250301/03/7813f5b4-8bca-336f-bc48-7fefeed9dc4c/1_org_zoom.jpg",
+              "Small": {
+                "Url": "https://cdn.dsmcdn.com/ty1645/prod/QC/20250301/03/7813f5b4-8bca-336f-bc48-7fefeed9dc4c/1_org_zoom.jpg"
+              },
+              "Medium": {
+                "Url": "https://cdn.dsmcdn.com/ty1645/prod/QC/20250301/03/7813f5b4-8bca-336f-bc48-7fefeed9dc4c/1_org_zoom.jpg"
+              },
+              "Large": {
+                "Url": "https://cdn.dsmcdn.com/ty1645/prod/QC/20250301/03/7813f5b4-8bca-336f-bc48-7fefeed9dc4c/1_org_zoom.jpg"
+              },
+              "IsMain": false
+            },
+            {
+              "Url": "https://cdn.dsmcdn.com/ty1639/prod/QC/20250219/02/bf9439e3-613d-366d-b5fa-5b7f98942e45/1_org_zoom.jpg",
+              "Small": {
+                "Url": "https://cdn.dsmcdn.com/ty1639/prod/QC/20250219/02/bf9439e3-613d-366d-b5fa-5b7f98942e45/1_org_zoom.jpg"
+              },
+              "Medium": {
+                "Url": "https://cdn.dsmcdn.com/ty1639/prod/QC/20250219/02/bf9439e3-613d-366d-b5fa-5b7f98942e45/1_org_zoom.jpg"
+              },
+              "Large": {
+                "Url": "https://cdn.dsmcdn.com/ty1639/prod/QC/20250219/02/bf9439e3-613d-366d-b5fa-5b7f98942e45/1_org_zoom.jpg"
+              },
+              "IsMain": false
+            }
+          ],
+          "Location": {
+
+          },
+          "Features": [
+            "FakeQuantity",
+            "Expired"
+          ],
+          "FeaturedValues": [
+            {
+              "Name": "realCategoryId",
+              "Value": "75"
+            },
+            {
+              "Name": "favCount",
+              "Value": "4271"
+            },
+            {
+              "Name": "rating",
+              "Value": "3.9591836734694"
+            },
+            {
+              "Name": "normalizedRating",
+              "Value": "0.8"
+            },
+            {
+              "Name": "reviews",
+              "Value": "98"
+            },
+            {
+              "Name": "basketCount",
+              "Value": "24"
+            }
+          ],
+          "IsSellAllowed": true,
+          "PhysicalParameters": {
+
+          },
+          "IsFiltered": false
+        },

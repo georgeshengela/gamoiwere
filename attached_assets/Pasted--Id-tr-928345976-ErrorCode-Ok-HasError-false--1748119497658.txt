@@ -1,0 +1,217 @@
+"Id": "tr-928345976",
+            "ErrorCode": "Ok",
+            "HasError": false,
+            "ProviderType": "Trendyol",
+            "UpdatedTime": "2025-05-22T23:40:50.78",
+            "CreatedTime": "2025-05-09T08:47:02.102",
+            "Title": "ზოლიანი პოლო საყელო ქსოვის მაისური წითელი ძვალი LUS0110",
+            "OriginalTitle": "Çizgili Polo Yaka Örme Sweatshirt KIRMIZI KEMİK LUS0110",
+            "CategoryId": "tr-g1c1179",
+            "ExternalCategoryId": "g1c1179",
+            "VendorId": "tr-104720",
+            "VendorName": "Lovely İstanbul",
+            "VendorDisplayName": "Lovely İstanbul",
+            "VendorScore": 0,
+            "Description": "Lovelyİstanbul Çizgili Polo Yaka Örme Sweatshirt KIRMIZI KEMİK LUS0110 yorumlarını inceleyin, Trendyol'a özel indirimli fiyata satın alın.",
+            "BrandId": "tr-166589",
+            "BrandName": "Lovelyİstanbul",
+            "TaobaoItemUrl": "https://www.trendyol.com/lovelyistanbul/cizgili-polo-yaka-orme-sweatshirt-kirmizi-kemik-lus0110-p-928345976",
+            "ExternalItemUrl": "https://www.trendyol.com/lovelyistanbul/cizgili-polo-yaka-orme-sweatshirt-kirmizi-kemik-lus0110-p-928345976",
+            "MainPictureUrl": "https://cdn.dsmcdn.com/ty1664/prod/QC/20250416/14/a2e1069e-14fd-3d7a-8878-99bb23d155b6/1_org_zoom.jpg",
+            "StuffStatus": "New",
+            "Volume": 0,
+            "Price": {
+              "OriginalPrice": 300.9,
+              "MarginPrice": 300.9,
+              "OriginalCurrencyCode": "TRY",
+              "ConvertedPriceList": {
+                "Internal": {
+                  "Price": 23.81,
+                  "Sign": "₾",
+                  "Code": "GEL"
+                },
+                "DisplayedMoneys": [
+                  {
+                    "Price": 23.81,
+                    "Sign": "₾",
+                    "Code": "GEL"
+                  }
+                ]
+              },
+              "ConvertedPrice": "23.81₾",
+              "ConvertedPriceWithoutSign": "23.81",
+              "CurrencySign": "₾",
+              "CurrencyName": "GEL",
+              "IsDeliverable": false,
+              "DeliveryPrice": {
+                "OriginalPrice": 0,
+                "MarginPrice": 0,
+                "OriginalCurrencyCode": "TRY",
+                "ConvertedPriceList": {
+                  "Internal": {
+                    "Price": 0,
+                    "Sign": "₾",
+                    "Code": "GEL"
+                  },
+                  "DisplayedMoneys": [
+                    {
+                      "Price": 0,
+                      "Sign": "₾",
+                      "Code": "GEL"
+                    }
+                  ]
+                }
+              },
+              "OneItemDeliveryPrice": {
+                "OriginalPrice": 0,
+                "MarginPrice": 0,
+                "OriginalCurrencyCode": "TRY",
+                "ConvertedPriceList": {
+                  "Internal": {
+                    "Price": 0,
+                    "Sign": "₾",
+                    "Code": "GEL"
+                  },
+                  "DisplayedMoneys": [
+                    {
+                      "Price": 0,
+                      "Sign": "₾",
+                      "Code": "GEL"
+                    }
+                  ]
+                }
+              },
+              "PriceWithoutDelivery": {
+                "OriginalPrice": 300.9,
+                "MarginPrice": 300.9,
+                "OriginalCurrencyCode": "TRY",
+                "ConvertedPriceList": {
+                  "Internal": {
+                    "Price": 23.81,
+                    "Sign": "₾",
+                    "Code": "GEL"
+                  },
+                  "DisplayedMoneys": [
+                    {
+                      "Price": 23.81,
+                      "Sign": "₾",
+                      "Code": "GEL"
+                    }
+                  ]
+                }
+              },
+              "OneItemPriceWithoutDelivery": {
+                "OriginalPrice": 300.9,
+                "MarginPrice": 300.9,
+                "OriginalCurrencyCode": "TRY",
+                "ConvertedPriceList": {
+                  "Internal": {
+                    "Price": 23.81,
+                    "Sign": "₾",
+                    "Code": "GEL"
+                  },
+                  "DisplayedMoneys": [
+                    {
+                      "Price": 23.81,
+                      "Sign": "₾",
+                      "Code": "GEL"
+                    }
+                  ]
+                }
+              }
+            },
+            "MasterQuantity": 10,
+            "Pictures": [
+              {
+                "Url": "https://cdn.dsmcdn.com/ty1664/prod/QC/20250416/14/a2e1069e-14fd-3d7a-8878-99bb23d155b6/1_org_zoom.jpg",
+                "Small": {
+                  "Url": "https://cdn.dsmcdn.com/ty1664/prod/QC/20250416/14/a2e1069e-14fd-3d7a-8878-99bb23d155b6/1_org_zoom.jpg"
+                },
+                "Medium": {
+                  "Url": "https://cdn.dsmcdn.com/ty1664/prod/QC/20250416/14/a2e1069e-14fd-3d7a-8878-99bb23d155b6/1_org_zoom.jpg"
+                },
+                "Large": {
+                  "Url": "https://cdn.dsmcdn.com/ty1664/prod/QC/20250416/14/a2e1069e-14fd-3d7a-8878-99bb23d155b6/1_org_zoom.jpg"
+                },
+                "IsMain": true
+              },
+              {
+                "Url": "https://cdn.dsmcdn.com/ty1663/prod/QC/20250416/14/16c2bc24-5d99-387a-9a56-fdf9d4a4dcca/1_org_zoom.jpg",
+                "Small": {
+                  "Url": "https://cdn.dsmcdn.com/ty1663/prod/QC/20250416/14/16c2bc24-5d99-387a-9a56-fdf9d4a4dcca/1_org_zoom.jpg"
+                },
+                "Medium": {
+                  "Url": "https://cdn.dsmcdn.com/ty1663/prod/QC/20250416/14/16c2bc24-5d99-387a-9a56-fdf9d4a4dcca/1_org_zoom.jpg"
+                },
+                "Large": {
+                  "Url": "https://cdn.dsmcdn.com/ty1663/prod/QC/20250416/14/16c2bc24-5d99-387a-9a56-fdf9d4a4dcca/1_org_zoom.jpg"
+                },
+                "IsMain": false
+              },
+              {
+                "Url": "https://cdn.dsmcdn.com/ty1664/prod/QC/20250416/14/a60964b9-aa69-3ad3-ae6a-222b7a971659/1_org_zoom.jpg",
+                "Small": {
+                  "Url": "https://cdn.dsmcdn.com/ty1664/prod/QC/20250416/14/a60964b9-aa69-3ad3-ae6a-222b7a971659/1_org_zoom.jpg"
+                },
+                "Medium": {
+                  "Url": "https://cdn.dsmcdn.com/ty1664/prod/QC/20250416/14/a60964b9-aa69-3ad3-ae6a-222b7a971659/1_org_zoom.jpg"
+                },
+                "Large": {
+                  "Url": "https://cdn.dsmcdn.com/ty1664/prod/QC/20250416/14/a60964b9-aa69-3ad3-ae6a-222b7a971659/1_org_zoom.jpg"
+                },
+                "IsMain": false
+              },
+              {
+                "Url": "https://cdn.dsmcdn.com/ty1664/prod/QC/20250416/14/866689ab-170b-3e67-ae61-4c8d151bb27e/1_org_zoom.jpg",
+                "Small": {
+                  "Url": "https://cdn.dsmcdn.com/ty1664/prod/QC/20250416/14/866689ab-170b-3e67-ae61-4c8d151bb27e/1_org_zoom.jpg"
+                },
+                "Medium": {
+                  "Url": "https://cdn.dsmcdn.com/ty1664/prod/QC/20250416/14/866689ab-170b-3e67-ae61-4c8d151bb27e/1_org_zoom.jpg"
+                },
+                "Large": {
+                  "Url": "https://cdn.dsmcdn.com/ty1664/prod/QC/20250416/14/866689ab-170b-3e67-ae61-4c8d151bb27e/1_org_zoom.jpg"
+                },
+                "IsMain": false
+              }
+            ],
+            "Location": {
+
+            },
+            "FeaturedValues": [
+              {
+                "Name": "rating",
+                "Value": "4.2"
+              },
+              {
+                "Name": "normalizedRating",
+                "Value": "0.85"
+              },
+              {
+                "Name": "favCount",
+                "Value": "6797"
+              },
+              {
+                "Name": "pageViewCount",
+                "Value": "1128"
+              },
+              {
+                "Name": "basketCount",
+                "Value": "943"
+              },
+              {
+                "Name": "reviews",
+                "Value": "19"
+              },
+              {
+                "Name": "realCategoryId",
+                "Value": "1179"
+              }
+            ],
+            "IsSellAllowed": true,
+            "PhysicalParameters": {
+
+            },
+            "IsFiltered": false
+          },
+          {

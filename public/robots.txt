@@ -1,0 +1,64 @@
+# Robots.txt for GAMOIWERE.GE
+# Georgian E-commerce Platform
+
+User-agent: *
+Allow: /
+
+# Allow all search engines to crawl the site
+Allow: /category/
+Allow: /products/
+Allow: /product/
+
+# Disallow private user areas
+Disallow: /account/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /admin/
+Disallow: /api/
+
+# Disallow temporary or development files
+Disallow: /temp/
+Disallow: /tmp/
+Disallow: /_vite/
+Disallow: /node_modules/
+
+# Allow important static files
+Allow: /sitemap.xml
+Allow: /favicon.ico
+Allow: /*.css
+Allow: /*.js
+Allow: /*.png
+Allow: /*.jpg
+Allow: /*.jpeg
+Allow: /*.gif
+Allow: /*.svg
+Allow: /*.webp
+
+# Special rules for major search engines
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: YandexBot
+Allow: /
+Crawl-delay: 2
+
+# Block aggressive crawlers
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+# Sitemap location
+Sitemap: https://gamoiwere.ge/sitemap.xml
+
+# Host preference
+Host: gamoiwere.ge

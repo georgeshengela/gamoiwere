@@ -1,0 +1,42 @@
+services:
+  # Web Service - Main Application
+  - type: web
+    name: gamoiwere-web-service
+    env: node
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: BOG_CLIENT_ID
+        sync: false
+      - key: BOG_CLIENT_SECRET
+        sync: false
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: MAILCHIMP_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SMSOFFICE_API_KEY
+        sync: false
+      - key: SMSOFFICE_SENDER
+        sync: false
+      - key: DEVMONKEYS_API_KEY
+        sync: false
+    autoDeploy: false
+
+  # PostgreSQL Database
+databases:
+  - name: gamoiwere-postgres
+    databaseName: gamoiwere_prod
+    user: gamoiwere_user
+    plan: starter

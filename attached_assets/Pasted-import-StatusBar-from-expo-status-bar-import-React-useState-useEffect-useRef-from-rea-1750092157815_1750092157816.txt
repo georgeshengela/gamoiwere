@@ -1,0 +1,4724 @@
+import { StatusBar } from 'expo-status-bar';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Image, SafeAreaView, Dimensions, KeyboardAvoidingView, Platform, ScrollView, TouchableWithoutFeedback, Keyboard, Animated } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as SecureStore from 'expo-secure-store';
+import { Ionicons } from '@expo/vector-icons';
+
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  full_name: string;
+  phone?: string;
+  address?: string;
+  balance?: number;
+  pending_transportation_fees?: number;
+  verification_status?: string;
+}
+
+interface RegisterData {
+  username: string;
+  email: string;
+  phone: string;
+  password: string;
+  confirmPassword: string;
+  terms: boolean;
+}
+
+const API_BASE_URL = 'https://6baf8a4c-7719-4fa5-ba40-164a176464f7-00-ydhaqhypg9xw.riker.replit.dev';
+const { width, height } = Dimensions.get('window');
+
+export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(true);
+  const [currentScreen, setCurrentScreen] = useState<'login' | 'register' | 'otp' | 'success'>('login');
+  const [appScreen, setAppScreen] = useState<'home' | 'profile' | 'editProfile'>('home');
+  
+  const [loginForm, setLoginForm] = useState({
+    username: '',
+    password: ''
+  });
+
+  const [registerForm, setRegisterForm] = useState<RegisterData>({
+    username: '',
+    email: '',
+    phone: '',
+    password: '',
+    confirmPassword: '',
+    terms: false
+  });
+
+  const [otpCode, setOtpCode] = useState('');
+  const [pendingPhone, setPendingPhone] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [pendingBalance, setPendingBalance] = useState(0);
+  const [ordersLoaded, setOrdersLoaded] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [orderDetails, setOrderDetails] = useState<any>(null);
+  const [loadingOrderDetails, setLoadingOrderDetails] = useState(false);
+  const fetchingRef = useRef(false);
+  
+  // Featured products state
+  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [translatedTitles, setTranslatedTitles] = useState<{[key: string]: string}>({});
+  
+  // Popular products state
+  const [popularProducts, setPopularProducts] = useState<any[]>([]);
+  const [loadingPopular, setLoadingPopular] = useState(false);
+  
+  // Animation state for modern loader
+  const [animationStep, setAnimationStep] = useState(0);
+  
+  // Header scroll state and animations
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
+  const headerAnimatedValue = useRef(new Animated.Value(1)).current;
+  const collapsedHeaderAnimatedValue = useRef(new Animated.Value(0)).current;
+  
+  // Profile editing form state
+  const [profileForm, setProfileForm] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    address: ''
+  });
+
+  useEffect(() => {
+    checkExistingToken();
+  }, []);
+
+  // Fetch profile data and orders when profile screen is accessed
+  useEffect(() => {
+    if (isLoggedIn && appScreen === 'profile') {
+      console.log('Profile screen accessed, fetching user data and orders...');
+      fetchUserProfile();
+      if (!ordersLoaded) {
+        fetchOrders();
+      }
+    }
+  }, [isLoggedIn, appScreen]);
+
+  // Fetch featured products when home screen is accessed
+  useEffect(() => {
+    if (isLoggedIn && appScreen === 'home') {
+      fetchFeaturedProducts();
+      fetchPopularProducts();
+    }
+  }, [isLoggedIn, appScreen]);
+
+  // Animation cycle for loader
+  useEffect(() => {
+    if (loadingProducts || loadingPopular) {
+      const interval = setInterval(() => {
+        setAnimationStep(prev => (prev + 1) % 4);
+      }, 800);
+      return () => clearInterval(interval);
+    }
+  }, [loadingProducts, loadingPopular]);
+
+  // Handle scroll events for header collapse with smooth animation
+  const handleScroll = (event: any) => {
+    const scrollY = event.nativeEvent.contentOffset.y;
+    const shouldCollapse = scrollY > 100;
+    
+    if (shouldCollapse !== isHeaderCollapsed) {
+      setIsHeaderCollapsed(shouldCollapse);
+      
+      if (shouldCollapse) {
+        // Collapsing: fade out main header, fade in collapsed header
+        Animated.parallel([
+          Animated.timing(headerAnimatedValue, {
+            toValue: 0,
+            duration: 250,
+            useNativeDriver: true,
+          }),
+          Animated.timing(collapsedHeaderAnimatedValue, {
+            toValue: 1,
+            duration: 250,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      } else {
+        // Expanding: fade in main header, fade out collapsed header
+        Animated.parallel([
+          Animated.timing(headerAnimatedValue, {
+            toValue: 1,
+            duration: 250,
+            useNativeDriver: true,
+          }),
+          Animated.timing(collapsedHeaderAnimatedValue, {
+            toValue: 0,
+            duration: 250,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }
+    }
+  };
+
+  const checkExistingToken = async () => {
+    try {
+      const token = await SecureStore.getItemAsync('authToken');
+      if (token) {
+        const response = await fetch(`${API_BASE_URL}/api/mobile/auth/verify-token`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+          setIsLoggedIn(true);
+        } else {
+          await SecureStore.deleteItemAsync('authToken');
+        }
+      }
+    } catch (error) {
+      console.error('Token verification error:', error);
+      await SecureStore.deleteItemAsync('authToken');
+    } finally {
+      setInitializing(false);
+    }
+  };
+
+  const handleLogin = async () => {
+    if (!loginForm.username || !loginForm.password) {
+      Alert.alert('შეცდომა', 'გთხოვთ შეავსოთ ყველა ველი');
+      return;
+    }
+
+    console.log('Starting login request for:', loginForm.username);
+    setLoading(true);
+    try {
+      console.log('Making request to:', `${API_BASE_URL}/api/mobile/auth/login`);
+      const response = await fetch(`${API_BASE_URL}/api/mobile/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loginForm)
+      });
+
+      console.log('Response status:', response.status);
+      const result = await response.json();
+      console.log('Response data:', result);
+      
+      if (response.ok) {
+        console.log('Login successful, storing token');
+        await SecureStore.setItemAsync('authToken', result.token);
+        setUser(result.user);
+        setIsLoggedIn(true);
+      } else {
+        console.log('Login failed:', result.message);
+        Alert.alert('შეცდომა', result.message || 'შესვლა ვერ მოხერხდა');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      Alert.alert('შეცდომა', 'ქსელის შეცდომა: ' + (error as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!registerForm.username || !registerForm.email || !registerForm.phone || !registerForm.password || !registerForm.confirmPassword) {
+      Alert.alert('შეცდომა', 'გთხოვთ შეავსოთ ყველა ველი');
+      return;
+    }
+
+    if (registerForm.password !== registerForm.confirmPassword) {
+      Alert.alert('შეცდომა', 'პაროლები არ ემთხვევა');
+      return;
+    }
+
+    if (!registerForm.terms) {
+      Alert.alert('შეცდომა', 'გთხოვთ დაეთანხმოთ წესებს და პირობებს');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/mobile/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(registerForm)
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        setPendingPhone(registerForm.phone);
+        setCurrentScreen('otp');
+        Alert.alert('წარმატება', 'ვერიფიკაციის კოდი გაიგზავნა თქვენს ტელეფონზე');
+      } else {
+        Alert.alert('შეცდომა', result.message || 'რეგისტრაცია ვერ მოხერხდა');
+      }
+    } catch (error) {
+      Alert.alert('შეცდომა', 'ქსელის შეცდომა');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOtpVerification = async () => {
+    if (!otpCode || otpCode.length !== 6) {
+      Alert.alert('შეცდომა', 'გთხოვთ შეიყვანოთ 6-ნიშნა კოდი');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/mobile/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: pendingPhone, code: otpCode })
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        setCurrentScreen('success');
+        setTimeout(() => {
+          setCurrentScreen('login');
+          setOtpCode('');
+          setPendingPhone('');
+          setRegisterForm({
+            username: '',
+            email: '',
+            phone: '',
+            password: '',
+            confirmPassword: '',
+            terms: false
+          });
+        }, 3000);
+      } else {
+        Alert.alert('შეცდომა', result.message || 'ვერიფიკაციის კოდი არასწორია');
+      }
+    } catch (error) {
+      Alert.alert('შეცდომა', 'ქსელის შეცდომა');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await SecureStore.deleteItemAsync('authToken');
+    setUser(null);
+    setIsLoggedIn(false);
+  };
+
+  const updateProfile = async () => {
+    setLoading(true);
+    try {
+      const token = await SecureStore.getItemAsync('authToken');
+      if (!token) {
+        Alert.alert('შეცდომა', 'გთხოვთ ავტორიზაცია გაიაროთ');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/user/update`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(profileForm)
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        setUser(result.user);
+        setAppScreen('profile');
+        Alert.alert('წარმატება', 'პროფილი განახლებულია');
+      } else {
+        Alert.alert('შეცდომა', result.message || 'პროფილის განახლება ვერ მოხერხდა');
+      }
+    } catch (error) {
+      Alert.alert('შეცდომა', 'ქსელის შეცდომა');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const initializeProfileForm = () => {
+    if (user) {
+      setProfileForm({
+        full_name: user.full_name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        address: user.address || ''
+      });
+    }
+  };
+
+  const getVerificationStatus = () => {
+    if (!user) return { text: 'უცნობი', color: '#8e8e93' };
+    
+    switch (user.verification_status) {
+      case 'verified':
+        return { text: 'ვერიფიცირებული', color: '#34c759' };
+      case 'pending':
+        return { text: 'მოლოდინში', color: '#ff9500' };
+      case 'unverified':
+      default:
+        return { text: 'არავერიფიცირებული', color: '#ff3b30' };
+    }
+  };
+
+  const fetchUserProfile = async () => {
+    try {
+      const token = await SecureStore.getItemAsync('authToken');
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}/api/mobile/auth/user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+        setPendingBalance(userData.pending_transportation_fees ? userData.pending_transportation_fees / 100 : 0);
+      }
+    } catch (error) {
+      console.error('Profile fetch error:', error);
+    }
+  };
+
+  const fetchOrders = async () => {
+    if (fetchingRef.current || loadingOrders) {
+      console.log('Orders fetch already in progress, skipping');
+      return;
+    }
+
+    console.log('Starting to fetch orders...');
+    setLoadingOrders(true);
+    fetchingRef.current = true;
+
+    try {
+      const token = await SecureStore.getItemAsync('authToken');
+      if (!token) {
+        console.log('No auth token found');
+        setLoadingOrders(false);
+        fetchingRef.current = false;
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/mobile/orders`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const ordersData = await response.json();
+        console.log('Orders received:', ordersData.length);
+        setOrders(ordersData);
+        setOrdersLoaded(true);
+      } else {
+        console.error('Orders fetch failed:', response.status);
+      }
+    } catch (error) {
+      console.error('Orders fetch error:', error);
+    } finally {
+      setLoadingOrders(false);
+      fetchingRef.current = false;
+    }
+  };
+
+  // Function to translate product titles
+  const translateTitle = async (title: string): Promise<string> => {
+    if (translatedTitles[title]) {
+      return translatedTitles[title];
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/translate-title`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const translatedTitle = data.translatedTitle || title;
+        setTranslatedTitles(prev => ({ ...prev, [title]: translatedTitle }));
+        return translatedTitle;
+      }
+    } catch (error) {
+      console.error('Translation error:', error);
+    }
+    
+    return title;
+  };
+
+  const fetchFeaturedProducts = async () => {
+    setLoadingProducts(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/home/featured`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Featured products fetched:', result);
+        
+        // Translate product titles
+        const productsWithTranslations = await Promise.all(
+          (result.featuredProducts || []).map(async (product: any) => {
+            const georgianTitle = await translateTitle(product.name);
+            return { ...product, georgianName: georgianTitle };
+          })
+        );
+        
+        setFeaturedProducts(productsWithTranslations);
+      } else {
+        console.log('Failed to fetch featured products');
+      }
+    } catch (error) {
+      console.error('Error fetching featured products:', error);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
+  const fetchPopularProducts = async () => {
+    setLoadingPopular(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/home/popular`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Popular products fetched:', result);
+        setPopularProducts(result.popularProducts || []);
+      } else {
+        console.log('Failed to fetch popular products');
+      }
+    } catch (error) {
+      console.error('Error fetching popular products:', error);
+    } finally {
+      setLoadingPopular(false);
+    }
+  };
+
+  const fetchOrderDetails = async (orderId: number) => {
+    setLoadingOrderDetails(true);
+    try {
+      const token = await SecureStore.getItemAsync('authToken');
+      if (!token) {
+        console.log('No token found for order details fetch');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/mobile/orders/${orderId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Order details fetched:', result);
+        setOrderDetails(result);
+        setSelectedOrderId(orderId);
+      } else {
+        const errorResult = await response.json();
+        console.log('Failed to fetch order details:', errorResult);
+        alert('შეკვეთის დეტალები ვერ ჩაიტვირთა');
+      }
+    } catch (error) {
+      console.error('Error fetching order details:', error);
+      alert('შეკვეთის დეტალები ვერ ჩაიტვირთა');
+    } finally {
+      setLoadingOrderDetails(false);
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'PENDING': return 'მოლოდინში';
+      case 'PROCESSING': return 'დამუშავებაში';
+      case 'PAID': return 'გადახდილი';
+      case 'SHIPPED': return 'გაგზავნილი';
+      case 'DELIVERED': return 'ჩაბარებული';
+      case 'CANCELLED': return 'გაუქმებული';
+      default: return status;
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'PENDING': return '#ff9500';
+      case 'PROCESSING': return '#007aff';
+      case 'PAID': return '#34c759';
+      case 'SHIPPED': return '#5856d6';
+      case 'DELIVERED': return '#30d158';
+      case 'CANCELLED': return '#ff3b30';
+      default: return '#8e8e93';
+    }
+  };
+
+  // Modern Full-Height Animated Loader Component
+  const ModernLoader = () => {
+    const getLoaderContent = () => {
+      switch (animationStep) {
+        case 0:
+          return {
+            icon: "bag-outline",
+            text: "იტვირთება პროდუქტები...",
+            subtext: "შერჩეული პროდუქტები"
+          };
+        case 1:
+          return {
+            icon: "card-outline",
+            text: "ფასების გაანალიზება...",
+            subtext: "საუკეთესო შეთავაზებები"
+          };
+        case 2:
+          return {
+            icon: "cube-outline",
+            text: "პროდუქტების მომზადება...",
+            subtext: "ხარისხის შემოწმება"
+          };
+        case 3:
+          return {
+            icon: "checkmark-circle-outline",
+            text: "ბოლო შტრიხები...",
+            subtext: "თითქმის მზადაა"
+          };
+        default:
+          return {
+            icon: "bag-outline",
+            text: "იტვირთება...",
+            subtext: "გთხოვთ დაელოდოთ"
+          };
+      }
+    };
+
+    const content = getLoaderContent();
+
+    return (
+      <View style={styles.modernLoaderContainer}>
+        <LinearGradient
+          colors={['#6e39ea', '#8b5cf6']}
+          style={styles.modernLoaderGradient}
+        >
+          <View style={styles.modernLoaderContent}>
+            {/* Animated Shopping Cart/Package Icon */}
+            <View style={styles.modernLoaderIconContainer}>
+              <View style={[
+                styles.modernLoaderIconCircle,
+                { transform: [{ scale: animationStep === 0 ? 1.2 : animationStep === 1 ? 1.1 : animationStep === 2 ? 1.15 : 1.0 }] }
+              ]}>
+                <Ionicons 
+                  name={content.icon as any} 
+                  size={48} 
+                  color="white" 
+                  style={[
+                    styles.modernLoaderIcon,
+                    { opacity: animationStep % 2 === 0 ? 1 : 0.7 }
+                  ]} 
+                />
+              </View>
+              
+              {/* Floating dots animation */}
+              <View style={styles.modernLoaderDots}>
+                <View style={[
+                  styles.modernLoaderDot,
+                  { opacity: animationStep >= 1 ? 1 : 0.3 }
+                ]} />
+                <View style={[
+                  styles.modernLoaderDot,
+                  { opacity: animationStep >= 2 ? 1 : 0.3 }
+                ]} />
+                <View style={[
+                  styles.modernLoaderDot,
+                  { opacity: animationStep >= 3 ? 1 : 0.3 }
+                ]} />
+              </View>
+            </View>
+
+            {/* Loading Text */}
+            <View style={styles.modernLoaderTextContainer}>
+              <Text style={styles.modernLoaderMainText}>
+                {content.text}
+              </Text>
+              <Text style={styles.modernLoaderSubText}>
+                {content.subtext}
+              </Text>
+            </View>
+
+            {/* Progress Bar */}
+            <View style={styles.modernLoaderProgressContainer}>
+              <View style={styles.modernLoaderProgressTrack}>
+                <View style={[
+                  styles.modernLoaderProgressFill,
+                  { width: `${((animationStep + 1) / 4) * 100}%` }
+                ]} />
+              </View>
+              <Text style={styles.modernLoaderProgressText}>
+                {Math.round(((animationStep + 1) / 4) * 100)}%
+              </Text>
+            </View>
+
+            {/* Animated Shopping Elements */}
+            <View style={styles.modernLoaderShoppingElements}>
+              <View style={[
+                styles.modernLoaderShoppingItem,
+                { 
+                  opacity: animationStep >= 1 ? 1 : 0.3,
+                  transform: [{ translateY: animationStep >= 1 ? 0 : 20 }]
+                }
+              ]}>
+                <Ionicons name="shirt-outline" size={20} color="rgba(255,255,255,0.8)" />
+              </View>
+              <View style={[
+                styles.modernLoaderShoppingItem,
+                { 
+                  opacity: animationStep >= 2 ? 1 : 0.3,
+                  transform: [{ translateY: animationStep >= 2 ? 0 : 20 }]
+                }
+              ]}>
+                <Ionicons name="watch-outline" size={20} color="rgba(255,255,255,0.8)" />
+              </View>
+              <View style={[
+                styles.modernLoaderShoppingItem,
+                { 
+                  opacity: animationStep >= 3 ? 1 : 0.3,
+                  transform: [{ translateY: animationStep >= 3 ? 0 : 20 }]
+                }
+              ]}>
+                <Ionicons name="footsteps-outline" size={20} color="rgba(255,255,255,0.8)" />
+              </View>
+            </View>
+          </View>
+        </LinearGradient>
+      </View>
+    );
+  };
+
+  // Modern ProductCard component with enhanced design
+  const ProductCard = ({ product }: { product: any }) => (
+    <TouchableOpacity style={styles.modernProductCard} activeOpacity={0.7}>
+      <View style={styles.modernProductImageContainer}>
+        {product.images && product.images.length > 0 ? (
+          <Image 
+            source={{ uri: product.images[0] }} 
+            style={styles.modernProductImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.modernProductImagePlaceholder}>
+            <Ionicons name="image-outline" size={32} color="#e5e7eb" />
+          </View>
+        )}
+        {product.discount && (
+          <View style={styles.modernDiscountBadge}>
+            <Text style={styles.modernDiscountText}>-{product.discount}</Text>
+          </View>
+        )}
+        <View style={styles.productCardOverlay}>
+          <TouchableOpacity style={styles.favoriteButton}>
+            <Ionicons name="heart-outline" size={18} color="white" />
+          </TouchableOpacity>
+        </View>
+      </View>
+      
+      <View style={styles.modernProductInfo}>
+        <Text style={styles.modernProductName} numberOfLines={2}>
+          {product.georgianName || product.name}
+        </Text>
+        
+        <View style={styles.modernPriceSection}>
+          <View style={styles.modernPriceContainer}>
+            <Text style={styles.modernProductPrice}>
+              {product.price}{product.sign || '₾'}
+            </Text>
+            {product.oldPrice && (
+              <Text style={styles.modernOldPrice}>
+                {product.oldPrice}{product.sign || '₾'}
+              </Text>
+            )}
+          </View>
+          
+          <TouchableOpacity style={styles.modernAddToCartButton}>
+            <Ionicons name="add" size={16} color="white" />
+          </TouchableOpacity>
+        </View>
+        
+        {product.discount && (
+          <View style={styles.savingsIndicator}>
+            <Ionicons name="trending-down" size={12} color="#059669" style={{ marginRight: 4 }} />
+            <Text style={styles.savingsText}>
+              დანაზოგი {(product.oldPrice - product.price).toFixed(2)}₾
+            </Text>
+          </View>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+
+  const ProfileContent = () => {
+    const verificationStatus = getVerificationStatus();
+
+    return (
+      <View style={styles.profileContentContainer}>
+        {/* Modern User Profile Card */}
+        {/* Modern User Profile Card */}
+        <TouchableOpacity 
+          style={styles.websiteCard} 
+          onPress={() => {
+            initializeProfileForm();
+            setAppScreen('editProfile');
+          }}
+          activeOpacity={0.95}
+        >
+          <View style={styles.cardPaddingContainer}>
+            {/* Modern Profile Layout */}
+            <View style={styles.modernUserProfileCard}>
+              {/* Profile Header with Avatar */}
+              <View style={styles.userProfileHeader}>
+                <View style={styles.profileAvatarSection}>
+                  <View style={styles.largeAvatarContainer}>
+                    <View style={styles.largeAvatarCircle}>
+                      <Text style={styles.largeAvatarText}>
+                        {user?.full_name ? user.full_name.charAt(0).toUpperCase() : 'G'}
+                      </Text>
+                    </View>
+                    <View style={styles.profileStatusDot} />
+                  </View>
+                  <View style={styles.profileNameSection}>
+                    <Text style={styles.profileDisplayName}>
+                      {user?.full_name || user?.username || 'მომხმარებელი'}
+                    </Text>
+                    <Text style={styles.profileEmailAddress}>{user?.email}</Text>
+                  </View>
+                </View>
+                <TouchableOpacity style={styles.profileEditButton}>
+                  <Ionicons name="create-outline" size={20} color="#6e39ea" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Profile Info Cards */}
+              <View style={styles.profileInfoCards}>
+                {/* Verification Status Card */}
+                <View style={styles.profileInfoCard}>
+                  <View style={styles.profileInfoIcon}>
+                    <Ionicons 
+                      name={user?.verification_status === 'verified' ? "shield-checkmark" : "shield-outline"} 
+                      size={20} 
+                      color={user?.verification_status === 'verified' ? '#10b981' : '#f59e0b'} 
+                    />
+                  </View>
+                  <View style={styles.profileInfoContent}>
+                    <Text style={styles.profileInfoLabel}>ვერიფიკაცია</Text>
+                    {user?.verification_status === 'verified' ? (
+                      <Text style={[styles.profileInfoValue, { color: '#10b981' }]}>
+                        დადასტურებული
+                      </Text>
+                    ) : (
+                      <Ionicons name="time" size={16} color="#f59e0b" />
+                    )}
+                  </View>
+                </View>
+
+                {/* Balance Card */}
+                <View style={styles.profileInfoCard}>
+                  <View style={styles.profileInfoIcon}>
+                    <Ionicons name="wallet-outline" size={20} color="#6e39ea" />
+                  </View>
+                  <View style={styles.profileInfoContent}>
+                    <Text style={styles.profileInfoLabel}>ბალანსი</Text>
+                    <Text style={styles.profileInfoValue}>
+                      {user?.balance ? (user.balance / 100).toFixed(2) : '0.00'} ₾
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </View>
+        </TouchableOpacity>
+
+
+
+        {/* Modern Orders Card */}
+        <View style={styles.websiteCard}>
+          <View style={styles.cardPaddingContainer}>
+            <View style={styles.modernOrdersCard}>
+              {/* Orders Header */}
+              <View style={styles.ordersCardHeader}>
+                <View style={styles.ordersHeaderLeft}>
+                  <View style={styles.ordersIconContainer}>
+                    <Ionicons name="bag-outline" size={24} color="#6e39ea" />
+                  </View>
+                  <View style={styles.ordersHeaderText}>
+                    <Text style={styles.ordersCardTitle}>შეკვეთები</Text>
+                    <Text style={styles.ordersCardSubtitle}>თქვენი შეკვეთების ისტორია</Text>
+                  </View>
+                </View>
+                {orders.length > 0 && (
+                  <View style={styles.ordersCountBadge}>
+                    <Text style={styles.ordersCountText}>{orders.length}</Text>
+                  </View>
+                )}
+              </View>
+              
+              {/* Orders Content */}
+              <View style={styles.ordersCardContent}>
+                {loadingOrders ? (
+                  <View style={styles.modernLoadingState}>
+                    <View style={styles.loadingIconContainer}>
+                      <Ionicons name="refresh" size={20} color="#6e39ea" />
+                    </View>
+                    <Text style={styles.loadingStateText}>იტვირთება...</Text>
+                  </View>
+                ) : orders.length === 0 ? (
+                  <View style={styles.modernEmptyState}>
+                    <View style={styles.emptyStateIconContainer}>
+                      <Ionicons name="bag-outline" size={48} color="#d1d5db" />
+                    </View>
+                    <Text style={styles.emptyStateTitle}>შეკვეთები არ არის</Text>
+                    <Text style={styles.emptyStateDescription}>თქვენი შეკვეთები გამოჩნდება აქ</Text>
+                  </View>
+                ) : (
+                  <View style={styles.modernOrdersList}>
+                    {orders.slice(0, 4).map((order: any, index: number) => (
+                      <View key={order.id} style={[styles.beautifulOrderItem, index < orders.slice(0, 4).length - 1 && styles.orderItemBorder]}>
+                        <View style={styles.orderItemContent}>
+                          <View style={styles.orderItemHeader}>
+                            <View style={styles.orderNumberSection}>
+                              <Text style={styles.orderNumber}>#{order.orderNumber}</Text>
+                              <Text style={styles.orderDate}>
+                                {new Date(order.createdAt).toLocaleDateString('ka-GE')}
+                              </Text>
+                            </View>
+                            <View style={[styles.orderStatusBadge, { backgroundColor: getStatusColor(order.status) + '20' }]}>
+                              <Text style={[styles.orderStatusText, { color: getStatusColor(order.status) }]}>
+                                {getStatusText(order.status)}
+                              </Text>
+                            </View>
+                          </View>
+                          
+                          <View style={styles.orderItemFooter}>
+                            <Text style={styles.orderAmount}>
+                              {(order.totalAmount / 100).toFixed(2)} ₾
+                            </Text>
+                            <TouchableOpacity 
+                              style={styles.orderViewButton}
+                              onPress={() => fetchOrderDetails(order.id)}
+                            >
+                              <Text style={styles.orderViewText}>ნახვა</Text>
+                              <Ionicons name="chevron-forward" size={14} color="#6e39ea" />
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      </View>
+                    ))}
+
+                    {orders.length > 4 && (
+                      <TouchableOpacity style={styles.viewAllOrdersButton}>
+                        <Text style={styles.viewAllOrdersText}>
+                          ყველა შეკვეთის ნახვა ({orders.length})
+                        </Text>
+                        <Ionicons name="chevron-forward" size={16} color="#6e39ea" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  const EditProfileContent = () => {
+    return (
+      <View style={styles.editProfileContainer}>
+        {/* Header */}
+        <View style={styles.editProfileHeader}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => setAppScreen('profile')}
+          >
+            <Ionicons name="arrow-back" size={24} color="#6e39ea" />
+          </TouchableOpacity>
+          <Text style={styles.editProfileTitle}>პროფილის რედაქტირება</Text>
+          <View style={styles.placeholder} />
+        </View>
+
+        {/* Form */}
+        <View style={styles.editFormContainer}>
+          <View style={styles.formField}>
+            <Text style={styles.fieldLabel}>სრული სახელი</Text>
+            <TextInput
+              style={styles.fieldInput}
+              value={profileForm.full_name}
+              onChangeText={(text) => setProfileForm({...profileForm, full_name: text})}
+              placeholder="შეიყვანეთ სრული სახელი"
+              placeholderTextColor="#999"
+            />
+          </View>
+
+          <View style={styles.formField}>
+            <Text style={styles.fieldLabel}>ელ. ფოსტა</Text>
+            <TextInput
+              style={styles.fieldInput}
+              value={profileForm.email}
+              onChangeText={(text) => setProfileForm({...profileForm, email: text})}
+              placeholder="შეიყვანეთ ელ. ფოსტა"
+              placeholderTextColor="#999"
+              keyboardType="email-address"
+            />
+          </View>
+
+          <View style={styles.formField}>
+            <Text style={styles.fieldLabel}>ტელეფონის ნომერი</Text>
+            <TextInput
+              style={styles.fieldInput}
+              value={profileForm.phone}
+              onChangeText={(text) => setProfileForm({...profileForm, phone: text})}
+              placeholder="შეიყვანეთ ტელეფონის ნომერი"
+              placeholderTextColor="#999"
+              keyboardType="phone-pad"
+            />
+          </View>
+
+          <View style={styles.formField}>
+            <Text style={styles.fieldLabel}>მისამართი</Text>
+            <TextInput
+              style={[styles.fieldInput, styles.addressInput]}
+              value={profileForm.address}
+              onChangeText={(text) => setProfileForm({...profileForm, address: text})}
+              placeholder="შეიყვანეთ მისამართი"
+              placeholderTextColor="#999"
+              multiline
+              numberOfLines={3}
+            />
+          </View>
+
+          {/* Verification Status Display */}
+          <View style={styles.verificationSection}>
+            <Text style={styles.fieldLabel}>ვერიფიკაციის სტატუსი</Text>
+            <View style={styles.verificationDisplay}>
+              <View style={[styles.verificationBadge, { backgroundColor: getVerificationStatus().color }]}>
+                <Ionicons 
+                  name={user?.verification_status === 'verified' ? "checkmark-circle" : "alert-circle"} 
+                  size={16} 
+                  color="white" 
+                />
+                <Text style={styles.verificationText}>{getVerificationStatus().text}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Save Button */}
+          <TouchableOpacity
+            style={[styles.saveButton, loading && styles.saveButtonDisabled]}
+            onPress={updateProfile}
+            disabled={loading}
+          >
+            {loading ? (
+              <Text style={styles.saveButtonText}>შენახვა...</Text>
+            ) : (
+              <Text style={styles.saveButtonText}>შენახვა</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  const dismissKeyboard = () => {
+    Keyboard.dismiss();
+  };
+
+  // Loading screen
+  if (initializing) {
+    return (
+      <LinearGradient colors={['#6e39ea', '#8b5cf6']} style={styles.container}>
+        <StatusBar style="light" />
+        <View style={styles.loadingContainer}>
+          <Image
+            source={require('./assets/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={styles.loadingText}>იტვირთება...</Text>
+        </View>
+      </LinearGradient>
+    );
+  }
+
+  // Order details screen
+  if (isLoggedIn && selectedOrderId && orderDetails) {
+    const safeAreaTop = Platform.OS === 'ios' ? 47 : 0; // Dynamic island
+    
+    return (
+      <View style={styles.mainContainer}>
+        <StatusBar style="dark" />
+        
+        {/* Safe Area Header Background */}
+        <View style={[styles.headerSafeArea, { height: safeAreaTop }]} />
+        
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => {
+              setSelectedOrderId(null);
+              setOrderDetails(null);
+            }}
+          >
+            <Ionicons name="arrow-back" size={24} color="#6e39ea" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>შეკვეთის დეტალები</Text>
+          <View style={styles.headerIcons}>
+            <TouchableOpacity style={styles.iconButton} onPress={handleLogout}>
+              <Ionicons name="log-out-outline" size={24} color="#6e39ea" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Order Details Content */}
+        <ScrollView style={styles.contentContainer} showsVerticalScrollIndicator={false}>
+          <View style={styles.orderDetailsContainer}>
+            {loadingOrderDetails ? (
+              <View style={styles.loadingContainer}>
+                <Ionicons name="refresh" size={32} color="#6e39ea" />
+                <Text style={styles.loadingText}>იტვირთება...</Text>
+              </View>
+            ) : (
+              <>
+                {/* Order Header Card */}
+                <View style={styles.orderDetailsCard}>
+                  <View style={styles.orderDetailsHeader}>
+                    <View style={styles.orderDetailsIconContainer}>
+                      <Ionicons name="receipt-outline" size={32} color="#6e39ea" />
+                    </View>
+                    <View style={styles.orderDetailsHeaderText}>
+                      <Text style={styles.orderDetailsTitle}>შეკვეთა #{orderDetails.order.orderNumber}</Text>
+                      <Text style={styles.orderDetailsDate}>
+                        {new Date(orderDetails.order.createdAt).toLocaleDateString('ka-GE', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </Text>
+                    </View>
+                    <View style={[styles.orderDetailsStatusBadge, { backgroundColor: getStatusColor(orderDetails.order.status) + '20' }]}>
+                      <Text style={[styles.orderDetailsStatusText, { color: getStatusColor(orderDetails.order.status) }]}>
+                        {getStatusText(orderDetails.order.status)}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Order Items Card with Enhanced Display */}
+                <View style={styles.orderDetailsCard}>
+                  <View style={styles.orderSummaryHeader}>
+                    <Ionicons name="bag-outline" size={24} color="#6e39ea" />
+                    <Text style={styles.orderSummaryTitle}>შეკვეთის შინაარსი</Text>
+                  </View>
+                  <View style={styles.orderSummaryContent}>
+                    {orderDetails.order.items && orderDetails.order.items.length > 0 ? (
+                      orderDetails.order.items.map((item, index) => (
+                        <View key={index} style={styles.orderItemWithImage}>
+                          {item.imageUrl ? (
+                            <Image 
+                              source={{ uri: item.imageUrl }} 
+                              style={styles.orderItemImage}
+                              resizeMode="cover"
+                            />
+                          ) : (
+                            <View style={styles.orderItemImagePlaceholder}>
+                              <Ionicons name="image-outline" size={24} color="#9ca3af" />
+                            </View>
+                          )}
+                          <View style={styles.orderItemDetails}>
+                            <Text style={styles.orderItemName} numberOfLines={2}>
+                              {item.name || item.product_title || 'პროდუქტი'}
+                            </Text>
+                            <View style={styles.orderItemMetaRow}>
+                              <Text style={styles.orderItemQuantity}>რაოდენობა: {item.quantity}</Text>
+                              {item.productId && (
+                                <Text style={styles.orderItemId}>#{item.productId}</Text>
+                              )}
+                            </View>
+                            <Text style={styles.orderItemPrice}>
+                              {((item.price * item.quantity) / 100).toFixed(2)} ₾
+                            </Text>
+                          </View>
+                        </View>
+                      ))
+                    ) : (
+                      <Text style={styles.noItemsText}>შეკვეთის ნივთები მიუწვდომელია</Text>
+                    )}
+                  </View>
+                  <View style={styles.orderTotalSection}>
+                    <View style={styles.orderTotalRow}>
+                      <Text style={styles.orderTotalLabel}>სულ ღირებულება:</Text>
+                      <Text style={styles.orderTotalAmount}>
+                        {(orderDetails.order.totalAmount / 100).toFixed(2)} ₾
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Delivery Tracking Card */}
+                {orderDetails.deliveryTracking && (
+                  <View style={styles.orderDetailsCard}>
+                    <View style={styles.deliveryTrackingHeader}>
+                      <Ionicons name="car-outline" size={24} color="#6e39ea" />
+                      <Text style={styles.deliveryTrackingTitle}>ამანათის მიწოდების ინფორმაცია</Text>
+                    </View>
+                    <View style={styles.deliveryTrackingContent}>
+                      {/* Tracking Summary */}
+                      <View style={styles.trackingSummary}>
+                        {orderDetails.deliveryTracking.trackingNumber && (
+                          <View style={styles.trackingInfoItem}>
+                            <Ionicons name="barcode-outline" size={20} color="#6e39ea" />
+                            <View style={styles.trackingInfoText}>
+                              <Text style={styles.trackingInfoLabel}>ტრეკინგ ნომერი</Text>
+                              <Text style={styles.trackingInfoValue}>{orderDetails.deliveryTracking.trackingNumber}</Text>
+                            </View>
+                          </View>
+                        )}
+                        
+                        {orderDetails.deliveryTracking.productWeight && (
+                          <View style={styles.trackingInfoItem}>
+                            <Ionicons name="scale-outline" size={20} color="#6e39ea" />
+                            <View style={styles.trackingInfoText}>
+                              <Text style={styles.trackingInfoLabel}>წონა</Text>
+                              <Text style={styles.trackingInfoValue}>{orderDetails.deliveryTracking.productWeight} კგ</Text>
+                            </View>
+                          </View>
+                        )}
+                        
+                        {orderDetails.deliveryTracking.transportationPrice && (
+                          <View style={styles.trackingInfoItem}>
+                            <Ionicons name="card-outline" size={20} color="#6e39ea" />
+                            <View style={styles.trackingInfoText}>
+                              <Text style={styles.trackingInfoLabel}>ტრანსპორტირების ღირებულება</Text>
+                              <Text style={styles.trackingInfoValue}>
+                                {(orderDetails.deliveryTracking.transportationPrice / 100).toFixed(2)} ₾
+                              </Text>
+                            </View>
+                          </View>
+                        )}
+                      </View>
+
+                      {/* Delivery Status Timeline */}
+                      <View style={styles.deliveryTimeline}>
+                        <Text style={styles.timelineTitle}>მიწოდების სტატუსი</Text>
+                        
+                        <View style={styles.timelineItem}>
+                          <View style={[styles.timelineIcon, orderDetails.deliveryTracking.orderedAt ? styles.timelineIconCompleted : styles.timelineIconPending]}>
+                            <Ionicons name="bag-outline" size={16} color={orderDetails.deliveryTracking.orderedAt ? "#fff" : "#9ca3af"} />
+                          </View>
+                          <View style={styles.timelineContent}>
+                            <Text style={styles.timelineLabel}>შეკვეთილია</Text>
+                            {orderDetails.deliveryTracking.orderedAt && (
+                              <Text style={styles.timelineDate}>
+                                {new Date(orderDetails.deliveryTracking.orderedAt).toLocaleDateString('ka-GE', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </Text>
+                            )}
+                          </View>
+                        </View>
+
+                        <View style={styles.timelineItem}>
+                          <View style={[styles.timelineIcon, orderDetails.deliveryTracking.receivedChinaAt ? styles.timelineIconCompleted : styles.timelineIconPending]}>
+                            <Ionicons name="checkmark-outline" size={16} color={orderDetails.deliveryTracking.receivedChinaAt ? "#fff" : "#9ca3af"} />
+                          </View>
+                          <View style={styles.timelineContent}>
+                            <Text style={styles.timelineLabel}>მიღებულია ჩინეთში</Text>
+                            {orderDetails.deliveryTracking.receivedChinaAt && (
+                              <Text style={styles.timelineDate}>
+                                {new Date(orderDetails.deliveryTracking.receivedChinaAt).toLocaleDateString('ka-GE', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </Text>
+                            )}
+                          </View>
+                        </View>
+
+                        <View style={styles.timelineItem}>
+                          <View style={[styles.timelineIcon, orderDetails.deliveryTracking.sentTbilisiAt ? styles.timelineIconCompleted : styles.timelineIconPending]}>
+                            <Ionicons name="airplane-outline" size={16} color={orderDetails.deliveryTracking.sentTbilisiAt ? "#fff" : "#9ca3af"} />
+                          </View>
+                          <View style={styles.timelineContent}>
+                            <Text style={styles.timelineLabel}>გაგზავნილია თბილისში</Text>
+                            {orderDetails.deliveryTracking.sentTbilisiAt && (
+                              <Text style={styles.timelineDate}>
+                                {new Date(orderDetails.deliveryTracking.sentTbilisiAt).toLocaleDateString('ka-GE', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </Text>
+                            )}
+                          </View>
+                        </View>
+
+                        <View style={styles.timelineItem}>
+                          <View style={[styles.timelineIcon, orderDetails.deliveryTracking.deliveredTbilisiAt ? styles.timelineIconCompleted : styles.timelineIconPending]}>
+                            <Ionicons name="home-outline" size={16} color={orderDetails.deliveryTracking.deliveredTbilisiAt ? "#fff" : "#9ca3af"} />
+                          </View>
+                          <View style={styles.timelineContent}>
+                            <Text style={styles.timelineLabel}>ჩაბარებულია თბილისში</Text>
+                            {orderDetails.deliveryTracking.deliveredTbilisiAt && (
+                              <Text style={styles.timelineDate}>
+                                {new Date(orderDetails.deliveryTracking.deliveredTbilisiAt).toLocaleDateString('ka-GE', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </Text>
+                            )}
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                )}
+
+                {/* Payment Information Card */}
+                <View style={styles.orderDetailsCard}>
+                  <View style={styles.paymentInfoHeader}>
+                    <Ionicons name="card-outline" size={24} color="#6e39ea" />
+                    <Text style={styles.paymentInfoTitle}>გადახდის ინფორმაცია</Text>
+                  </View>
+                  <View style={styles.paymentInfoContent}>
+                    <View style={styles.paymentInfoRow}>
+                      <Text style={styles.paymentInfoLabel}>გადახდის მეთოდი:</Text>
+                      <Text style={styles.paymentInfoValue}>
+                        {orderDetails.order.paymentMethod === 'BANK_TRANSFER' ? 'საბანკო გადარიცხვა' : orderDetails.order.paymentMethod}
+                      </Text>
+                    </View>
+                    <View style={styles.paymentInfoRow}>
+                      <Text style={styles.paymentInfoLabel}>სტატუსი:</Text>
+                      <Text style={[styles.paymentInfoValue, { color: getStatusColor(orderDetails.order.status) }]}>
+                        {getStatusText(orderDetails.order.status)}
+                      </Text>
+                    </View>
+                    <View style={styles.paymentInfoRow}>
+                      <Text style={styles.paymentInfoLabel}>სულ თანხა:</Text>
+                      <Text style={[styles.paymentInfoValue, styles.totalAmountText]}>
+                        {(orderDetails.order.totalAmount / 100).toFixed(2)} ₾
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Shipping Address Card */}
+                <View style={styles.orderDetailsCard}>
+                  <View style={styles.shippingHeader}>
+                    <Ionicons name="location-outline" size={24} color="#6e39ea" />
+                    <Text style={styles.shippingTitle}>მიწოდების მისამართი</Text>
+                  </View>
+                  <View style={styles.shippingContent}>
+                    {orderDetails.order.recipientName && (
+                      <View style={styles.shippingRow}>
+                        <Text style={styles.shippingLabel}>მიმღები:</Text>
+                        <Text style={styles.shippingValue}>{orderDetails.order.recipientName}</Text>
+                      </View>
+                    )}
+                    {orderDetails.order.recipientPhone && (
+                      <View style={styles.shippingRow}>
+                        <Text style={styles.shippingLabel}>ტელეფონი:</Text>
+                        <Text style={styles.shippingValue}>{orderDetails.order.recipientPhone}</Text>
+                      </View>
+                    )}
+                    {orderDetails.order.shippingAddress && (
+                      <View style={styles.shippingRow}>
+                        <Text style={styles.shippingLabel}>მისამართი:</Text>
+                        <Text style={styles.shippingValue}>{orderDetails.order.shippingAddress}</Text>
+                      </View>
+                    )}
+                    {orderDetails.order.shippingCity && (
+                      <View style={styles.shippingRow}>
+                        <Text style={styles.shippingLabel}>ქალაქი:</Text>
+                        <Text style={styles.shippingValue}>{orderDetails.order.shippingCity}</Text>
+                      </View>
+                    )}
+                    {orderDetails.order.shippingPostalCode && (
+                      <View style={styles.shippingRow}>
+                        <Text style={styles.shippingLabel}>საფოსტო კოდი:</Text>
+                        <Text style={styles.shippingValue}>{orderDetails.order.shippingPostalCode}</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
+                {/* Contact Information Card */}
+                <View style={styles.orderDetailsCard}>
+                  <View style={styles.contactHeader}>
+                    <Ionicons name="person-outline" size={24} color="#6e39ea" />
+                    <Text style={styles.contactTitle}>საკონტაქტო ინფორმაცია</Text>
+                  </View>
+                  <View style={styles.contactContent}>
+                    <View style={styles.contactRow}>
+                      <Text style={styles.contactLabel}>ელ. ფოსტა:</Text>
+                      <Text style={styles.contactValue}>{user?.email || 'N/A'}</Text>
+                    </View>
+                    <View style={styles.contactRow}>
+                      <Text style={styles.contactLabel}>ტელეფონი:</Text>
+                      <Text style={styles.contactValue}>{user?.phone || 'N/A'}</Text>
+                    </View>
+                    {user?.address && (
+                      <View style={styles.contactRow}>
+                        <Text style={styles.contactLabel}>მისამართი:</Text>
+                        <Text style={styles.contactValue}>{user.address}</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </>
+            )}
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // Main page for logged in users
+  if (isLoggedIn) {
+    const safeAreaTop = Platform.OS === 'ios' ? 47 : 0; // Dynamic island
+    
+    return (
+      <View style={styles.mainContainer}>
+        <StatusBar style="dark" />
+        
+        {/* Full Screen Modern Loader Overlay */}
+        {(loadingProducts || loadingPopular) && <ModernLoader />}
+        
+        {/* Safe Area Header Background */}
+        <View style={[styles.headerSafeArea, { height: safeAreaTop }]} />
+        
+        {/* Dynamic Header - Fixed height container */}
+        <Animated.View style={[
+          styles.dynamicHeaderContainer,
+          {
+            height: headerAnimatedValue.interpolate({
+              inputRange: [0, 1],
+              outputRange: [70, 160],
+            }),
+          }
+        ]}>
+          {/* Full Header */}
+          <Animated.View style={[
+            styles.fullHeaderContainer,
+            {
+              opacity: headerAnimatedValue,
+            }
+          ]}>
+            <View style={styles.header}>
+              <Text style={styles.welcomeText}>
+                გამარჯობა, {user?.full_name?.split(' ')[0] || 'სტუმარო'} 👋
+              </Text>
+              <View style={styles.notificationContainer}>
+                <TouchableOpacity style={styles.notificationButton}>
+                  <Ionicons name="notifications-outline" size={24} color="#333" />
+                  <View style={styles.notificationDot} />
+                </TouchableOpacity>
+              </View>
+            </View>
+            
+            {/* Tagline */}
+            <View style={styles.taglineContainer}>
+              <Text style={styles.taglineText}>
+                იშოპინგე მარტივად გამოიწერეს
+              </Text>
+              <Text style={styles.taglineSubText}>
+                მობილურ აპლიკაციაში.
+              </Text>
+            </View>
+
+            {/* Search Bar */}
+            <View style={styles.searchContainer}>
+              <View style={styles.searchBar}>
+                <Ionicons name="search" size={18} color="#999" style={styles.searchIcon} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="პროდუქტის ძიება..."
+                  placeholderTextColor="#999"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+              </View>
+            </View>
+          </Animated.View>
+
+          {/* Collapsed Header */}
+          <Animated.View style={[
+            styles.collapsedHeaderOverlay,
+            {
+              opacity: collapsedHeaderAnimatedValue,
+            }
+          ]}>
+            <View style={styles.collapsedSearchBar}>
+              <Ionicons name="search" size={18} color="#999" style={styles.searchIcon} />
+              <TextInput
+                style={styles.collapsedSearchInput}
+                placeholder="პროდუქტის ძიება..."
+                placeholderTextColor="#999"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </View>
+            <View style={styles.notificationContainer}>
+              <TouchableOpacity style={styles.notificationButton}>
+                <Ionicons name="notifications-outline" size={24} color="#333" />
+                <View style={styles.notificationDot} />
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </Animated.View>
+
+        {/* Content Area */}
+        <ScrollView 
+          style={styles.contentContainer} 
+          showsVerticalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+        >
+          {appScreen === 'editProfile' ? (
+            <EditProfileContent />
+          ) : appScreen === 'profile' ? (
+            <ProfileContent />
+          ) : (
+            <View style={styles.productsSection}>
+              {/* Modern Section Header */}
+              <View style={styles.modernSectionHeader}>
+                <View style={styles.sectionHeaderContent}>
+                  <View style={styles.sectionIconContainer}>
+                    <Ionicons name="star" size={24} color="#6e39ea" />
+                  </View>
+                  <View style={styles.sectionTitleContainer}>
+                    <Text style={styles.modernSectionTitle}>რეკომენდირებული</Text>
+                  </View>
+                </View>
+                <TouchableOpacity style={styles.viewAllButton}>
+                  <Text style={styles.viewAllText}>ყველა</Text>
+                  <Ionicons name="chevron-forward" size={16} color="#6e39ea" />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.modernProductsGrid}>
+                {featuredProducts.map((product, index) => (
+                  <ProductCard 
+                    key={product.id || index} 
+                    product={product}
+                  />
+                ))}
+              </View>
+
+              {/* Popular Products Section */}
+              <View style={styles.modernSectionHeader}>
+                <View style={styles.sectionHeaderContent}>
+                  <View style={styles.sectionIconContainer}>
+                    <Ionicons name="trending-up" size={24} color="#6e39ea" />
+                  </View>
+                  <View style={styles.sectionTitleContainer}>
+                    <Text style={styles.modernSectionTitle}>პოპულარული</Text>
+                  </View>
+                </View>
+                <TouchableOpacity style={styles.viewAllButton}>
+                  <Text style={styles.viewAllText}>ყველა</Text>
+                  <Ionicons name="chevron-forward" size={16} color="#6e39ea" />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.modernProductsGrid}>
+                {popularProducts.map((product, index) => (
+                  <ProductCard 
+                    key={product.id || index} 
+                    product={product}
+                  />
+                ))}
+              </View>
+            </View>
+          )}
+        </ScrollView>
+        
+        {/* Bottom Footer Menu */}
+        <View style={styles.bottomMenu}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => setAppScreen('home')}>
+            <Ionicons name="home" size={24} color={appScreen === 'home' ? "#6e39ea" : "#666"} />
+            <Text style={appScreen === 'home' ? styles.menuText : styles.menuTextInactive}>მთავარი</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.menuItem}>
+            <Ionicons name="heart" size={24} color="#666" />
+            <Text style={styles.menuTextInactive}>ფავორიტები</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.cartMenuItem}>
+            <View style={styles.cartIcon}>
+              <Ionicons name="bag" size={28} color="white" />
+              <View style={styles.cartBadge}>
+                <Text style={styles.cartBadgeText}>2</Text>
+              </View>
+            </View>
+            <Text style={styles.cartText}>კალათა</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.menuItem} onPress={() => {
+            console.log('Profile button pressed - current state:', { ordersLoaded, fetchingCurrent: fetchingRef.current });
+            setAppScreen('profile');
+            // Only fetch orders once when profile is first accessed
+            if (!ordersLoaded && !fetchingRef.current) {
+              console.log('Triggering fetchOrders from profile button');
+              fetchOrders();
+            }
+          }}>
+            <Ionicons name="person" size={24} color={appScreen === 'profile' ? "#6e39ea" : "#666"} />
+            <Text style={appScreen === 'profile' ? styles.menuText : styles.menuTextInactive}>პროფილი</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.menuItem}>
+            <Ionicons name="receipt" size={24} color="#666" />
+            <Text style={styles.menuTextInactive}>შეკვეთები</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <LinearGradient colors={['#6e39ea', '#8b5cf6']} style={styles.container}>
+      <StatusBar style="light" />
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
+        >
+          <TouchableWithoutFeedback onPress={dismissKeyboard}>
+            <ScrollView 
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {/* Logo Section */}
+              <View style={styles.logoSection}>
+                <Image
+                  source={require('./assets/logo.png')}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
+                <Text style={styles.tagline}>თუ ხარ რეგისტრირებული გაიარე ავტორიზაცია</Text>
+              </View>
+
+              {/* Login Form */}
+              {currentScreen === 'login' && (
+                <View style={styles.formContainer}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="მომხმარებლის სახელი ან ელ-ფოსტა"
+                    placeholderTextColor="#c4b5fd"
+                    value={loginForm.username}
+                    onChangeText={(text) => setLoginForm({...loginForm, username: text})}
+                    autoCapitalize="none"
+                  />
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="პაროლი"
+                    placeholderTextColor="#c4b5fd"
+                    value={loginForm.password}
+                    onChangeText={(text) => setLoginForm({...loginForm, password: text})}
+                    secureTextEntry
+                  />
+
+                  <TouchableOpacity
+                    style={styles.primaryButton}
+                    onPress={handleLogin}
+                    disabled={loading}
+                  >
+                    <Text style={styles.primaryButtonText}>
+                      {loading ? 'შესვლა...' : 'შესვლა'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.secondaryButton}
+                    onPress={() => setCurrentScreen('register')}
+                  >
+                    <Text style={styles.secondaryButtonText}>
+                      არ გაქვთ ანგარიში? რეგისტრაცია
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Register Form */}
+              {currentScreen === 'register' && (
+                <View style={styles.formContainer}>
+                  <Text style={styles.formTitle}>რეგისტრაცია</Text>
+                  
+                  <TextInput
+                    style={styles.input}
+                    placeholder="მომხმარებლის სახელი"
+                    placeholderTextColor="#c4b5fd"
+                    value={registerForm.username}
+                    onChangeText={(text) => setRegisterForm({...registerForm, username: text})}
+                    autoCapitalize="none"
+                  />
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="ელ-ფოსტა"
+                    placeholderTextColor="#c4b5fd"
+                    value={registerForm.email}
+                    onChangeText={(text) => setRegisterForm({...registerForm, email: text})}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="ტელეფონის ნომერი (+995555123456)"
+                    placeholderTextColor="#c4b5fd"
+                    value={registerForm.phone}
+                    onChangeText={(text) => setRegisterForm({...registerForm, phone: text})}
+                    keyboardType="phone-pad"
+                  />
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="პაროლი"
+                    placeholderTextColor="#c4b5fd"
+                    value={registerForm.password}
+                    onChangeText={(text) => setRegisterForm({...registerForm, password: text})}
+                    secureTextEntry
+                  />
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="პაროლის დადასტურება"
+                    placeholderTextColor="#c4b5fd"
+                    value={registerForm.confirmPassword}
+                    onChangeText={(text) => setRegisterForm({...registerForm, confirmPassword: text})}
+                    secureTextEntry
+                  />
+
+                  <TouchableOpacity
+                    style={styles.checkboxContainer}
+                    onPress={() => setRegisterForm({...registerForm, terms: !registerForm.terms})}
+                  >
+                    <View style={[styles.checkbox, registerForm.terms && styles.checkboxChecked]}>
+                      {registerForm.terms && <Text style={styles.checkmark}>✓</Text>}
+                    </View>
+                    <Text style={styles.checkboxText}>ვეთანხმები წესებს და პირობებს</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.primaryButton}
+                    onPress={handleRegister}
+                    disabled={loading}
+                  >
+                    <Text style={styles.primaryButtonText}>
+                      {loading ? 'რეგისტრაცია...' : 'რეგისტრაცია'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.secondaryButton}
+                    onPress={() => setCurrentScreen('login')}
+                  >
+                    <Text style={styles.secondaryButtonText}>უკან დაბრუნება</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* OTP Verification */}
+              {currentScreen === 'otp' && (
+                <View style={styles.formContainer}>
+                  <Text style={styles.formTitle}>ვერიფიკაციის კოდი</Text>
+                  
+                  <Text style={styles.otpDescription}>
+                    შეიყვანეთ კოდი რომელიც გაიგზავნა ნომერზე {pendingPhone}
+                  </Text>
+
+                  <TextInput
+                    style={styles.otpInput}
+                    placeholder="6-ნიშნა კოდი"
+                    placeholderTextColor="#c4b5fd"
+                    value={otpCode}
+                    onChangeText={(text) => setOtpCode(text.replace(/\D/g, '').slice(0, 6))}
+                    keyboardType="numeric"
+                    maxLength={6}
+                    textAlign="center"
+                  />
+
+                  <TouchableOpacity
+                    style={styles.primaryButton}
+                    onPress={handleOtpVerification}
+                    disabled={loading}
+                  >
+                    <Text style={styles.primaryButtonText}>
+                      {loading ? 'ვერიფიკაცია...' : 'ვერიფიკაცია'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.secondaryButton}
+                    onPress={() => setCurrentScreen('register')}
+                  >
+                    <Text style={styles.secondaryButtonText}>უკან დაბრუნება</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Success Screen */}
+              {currentScreen === 'success' && (
+                <View style={styles.formContainer}>
+                  <View style={styles.successIcon}>
+                    <Text style={styles.successIconText}>✓</Text>
+                  </View>
+                  <Text style={styles.formTitle}>რეგისტრაცია წარმატებულია!</Text>
+                  <Text style={styles.successMessage}>
+                    თქვენი ანგარიში შეიქმნა. ახლა შეგიძლიათ შეხვიდეთ სისტემაში.
+                  </Text>
+                </View>
+              )}
+
+              {/* Footer */}
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>© 2025 GAMOIWERE.GE</Text>
+              </View>
+            </ScrollView>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LinearGradient>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+    paddingTop: Platform.OS === 'ios' ? 50 : 20, // iPhone 15 Pro Max dynamic island
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20, // iPhone home indicator
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    minHeight: height - 100, // Ensure minimum height for centering
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoSection: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  logo: {
+    width: 250,
+    height: 120,
+    marginBottom: 10,
+  },
+  tagline: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '500',
+    letterSpacing: 1.5,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  loadingText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '500',
+    marginTop: 20,
+  },
+  formContainer: {
+    marginBottom: 30,
+  },
+  formTitle: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 30,
+  },
+  input: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    color: 'white',
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  otpInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    color: 'white',
+    fontSize: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    letterSpacing: 8,
+    fontFamily: 'monospace',
+  },
+  otpDescription: {
+    color: '#c4b5fd',
+    textAlign: 'center',
+    marginBottom: 20,
+    fontSize: 16,
+  },
+  primaryButton: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 15,
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  primaryButtonText: {
+    color: '#6e39ea',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  secondaryButton: {
+    alignItems: 'center',
+    padding: 10,
+  },
+  secondaryButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 5,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderWidth: 2,
+    borderColor: 'white',
+    borderRadius: 4,
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: 'white',
+  },
+  checkmark: {
+    color: '#6e39ea',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  checkboxText: {
+    color: 'white',
+    fontSize: 16,
+    flex: 1,
+  },
+  successContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  welcomeTitle: {
+    color: 'white',
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  welcomeSubtitle: {
+    color: '#c4b5fd',
+    fontSize: 20,
+    marginBottom: 40,
+  },
+  successCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 40,
+    alignItems: 'center',
+  },
+  successText: {
+    color: '#86efac',
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  successSubtext: {
+    color: '#c4b5fd',
+    textAlign: 'center',
+  },
+  logoutButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+  },
+  logoutButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  successIcon: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#22c55e',
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  successIconText: {
+    color: 'white',
+    fontSize: 40,
+    fontWeight: 'bold',
+  },
+  successMessage: {
+    color: '#c4b5fd',
+    textAlign: 'center',
+    fontSize: 16,
+    marginTop: 10,
+  },
+  footer: {
+    alignItems: 'center',
+    marginTop: 40,
+  },
+  footerText: {
+    color: '#c4b5fd',
+    fontSize: 14,
+  },
+  // Main page styles
+  mainContainer: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  headerSafeArea: {
+    backgroundColor: 'white',
+  },
+  dynamicHeaderContainer: {
+    backgroundColor: 'white',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  fullHeaderContainer: {
+    backgroundColor: 'white',
+    height: 160,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: 'white',
+  },
+  welcomeText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  notificationContainer: {
+    position: 'relative',
+  },
+  notificationButton: {
+    padding: 8,
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#ff4444',
+  },
+  taglineContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: 'white',
+  },
+  taglineText: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#333',
+    lineHeight: 28,
+  },
+  taglineSubText: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#333',
+    lineHeight: 28,
+  },
+  collapsedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+  },
+  collapsedSearchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    marginRight: 15,
+  },
+  collapsedSearchInput: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 16,
+    color: '#333',
+  },
+  searchContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: 'white',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+  },
+  collapsedHeaderOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: 'white',
+    height: 70,
+  },
+  collapsedSearchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 12,
+  },
+  collapsedSearchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#333',
+  },
+  contentContainer: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  productsSection: {
+    flex: 1, // Fill remaining viewport
+    paddingHorizontal: 8,
+    paddingTop: 16,
+    paddingBottom: 8,
+    backgroundColor: '#f8f9fa',
+  },
+  
+  // Modern Section Header Styles
+  modernSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 16,
+    backgroundColor: 'white',
+    borderRadius: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  sectionHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  sectionIconContainer: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    padding: 10,
+    marginRight: 12,
+  },
+  sectionTitleContainer: {
+    flex: 1,
+  },
+  modernSectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 2,
+  },
+  modernSectionSubtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#f8fafc',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  viewAllText: {
+    fontSize: 14,
+    color: '#6e39ea',
+    fontWeight: '600',
+    marginRight: 4,
+  },
+  
+  // Modern Loading Container
+  modernLoadingContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    backgroundColor: 'white',
+    borderRadius: 16,
+    marginHorizontal: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  loadingAnimationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  loadingDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#6e39ea',
+    marginHorizontal: 4,
+  },
+  loadingDot1: {
+    opacity: 1,
+  },
+  loadingDot2: {
+    opacity: 0.7,
+  },
+  loadingDot3: {
+    opacity: 0.4,
+  },
+  modernLoadingText: {
+    fontSize: 16,
+    color: '#6b7280',
+    fontWeight: '500',
+    letterSpacing: 0.5,
+  },
+  
+  // Modern Products Grid
+  modernProductsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 0, // No padding to match full section header width
+  },
+  
+  // Modern Product Card Styles
+  modernProductCard: {
+    width: '48%', // Slightly reduced for better spacing
+    backgroundColor: 'white',
+    borderRadius: 8, // Changed from 20 to 8
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 8,
+    overflow: 'hidden',
+  },
+  modernProductImageContainer: {
+    position: 'relative',
+    height: 180,
+    backgroundColor: '#f8f9fa',
+  },
+  modernProductImage: {
+    width: '100%',
+    height: '100%',
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+  },
+  modernProductImagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6',
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+  },
+  modernDiscountBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    backgroundColor: '#ef4444',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    shadowColor: '#ef4444',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modernDiscountText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  productCardOverlay: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+  },
+  favoriteButton: {
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 18,
+    padding: 8,
+    backdropFilter: 'blur(10px)',
+  },
+  modernProductInfo: {
+    padding: 16,
+  },
+  modernProductName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1f2937',
+    lineHeight: 20,
+    marginBottom: 12,
+    minHeight: 40, // Consistent height for alignment
+  },
+  modernPriceSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  modernPriceContainer: {
+    flex: 1,
+  },
+  modernProductPrice: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#6e39ea',
+    marginBottom: 2,
+  },
+  modernOldPrice: {
+    fontSize: 14,
+    color: '#9ca3af',
+    textDecorationLine: 'line-through',
+    fontWeight: '500',
+  },
+  modernAddToCartButton: {
+    backgroundColor: '#6e39ea',
+    borderRadius: 12,
+    padding: 8,
+    shadowColor: '#6e39ea',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  savingsIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#dcfce7',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+    shadowColor: '#16a34a',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  savingsText: {
+    fontSize: 11,
+    color: '#059669',
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  bottomMenu: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    paddingBottom: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  menuItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  menuText: {
+    fontSize: 12,
+    color: '#6e39ea',
+    fontWeight: '600',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  menuTextInactive: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  cartMenuItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 4,
+    position: 'relative',
+  },
+  cartIcon: {
+    backgroundColor: '#6e39ea',
+    borderRadius: 25,
+    width: 50,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    shadowColor: '#6e39ea',
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 12,
+    transform: [{ scale: 1.1 }],
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: '#ff4757',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'white',
+  },
+  cartBadgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  cartText: {
+    fontSize: 12,
+    color: '#6e39ea',
+    fontWeight: '600',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  
+  // Profile styles
+  profileSection: {
+    backgroundColor: 'white',
+    margin: 16,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#6e39ea',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profileAvatar: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: 'linear-gradient(135deg, #6e39ea, #8b5cf6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+    shadowColor: '#6e39ea',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1a1a2e',
+    marginBottom: 4,
+  },
+  profileEmail: {
+    fontSize: 14,
+    color: '#6e39ea',
+    marginBottom: 2,
+  },
+  profilePhone: {
+    fontSize: 13,
+    color: '#999',
+  },
+
+  // Modern Balance Section
+  modernBalanceSection: {
+    backgroundColor: 'white',
+    margin: 16,
+    marginTop: 8,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#6e39ea',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  balanceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 12,
+  },
+  modernSectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1a1a2e',
+    marginLeft: 8,
+  },
+  modernBalanceCard: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  balanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#f8f4ff',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 12,
+  },
+  balanceInfoContainer: {
+    flex: 1,
+  },
+  balanceSubtitle: {
+    fontSize: 14,
+    color: '#64748b',
+    marginBottom: 8,
+    fontWeight: '500',
+  },
+  modernBalanceAmount: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#6e39ea',
+    letterSpacing: -1,
+  },
+  balanceIconContainer: {
+    backgroundColor: '#e0e7ff',
+    borderRadius: 12,
+    padding: 12,
+  },
+  pendingBalanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#fff7ed',
+    borderRadius: 12,
+    padding: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#ff9500',
+  },
+  pendingBalanceInfo: {
+    flex: 1,
+  },
+  pendingBalanceLabel: {
+    fontSize: 13,
+    color: '#ea580c',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  pendingBalanceAmount: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#ff9500',
+  },
+
+  // Modern Orders Section
+  modernOrdersSection: {
+    backgroundColor: 'white',
+    margin: 16,
+    marginTop: 8,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#6e39ea',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  ordersHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+  },
+  modernLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  loadingSpinner: {
+    marginRight: 12,
+  },
+  modernLoadingText: {
+    fontSize: 16,
+    color: '#6e39ea',
+    fontWeight: '600',
+  },
+  modernEmptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyIconContainer: {
+    backgroundColor: '#f8f4ff',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
+  },
+  modernEmptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#64748b',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#94a3b8',
+    textAlign: 'center',
+  },
+  ordersContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  modernOrderCard: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#6e39ea',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  firstOrderCard: {
+    backgroundColor: '#f8f4ff',
+    borderLeftColor: '#6e39ea',
+    shadowColor: '#6e39ea',
+    shadowOpacity: 0.1,
+  },
+  modernOrderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  orderNumberContainer: {
+    flex: 1,
+  },
+  modernOrderNumber: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 4,
+  },
+  modernOrderDate: {
+    fontSize: 13,
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  modernStatusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  modernStatusText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: 'white',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  orderAmountContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  modernOrderAmount: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#6e39ea',
+  },
+  viewAllContainer: {
+    backgroundColor: '#e0e7ff',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  viewAllText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6e39ea',
+  },
+
+  // Legacy styles (keeping for compatibility)
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
+  },
+  balanceCard: {
+    backgroundColor: '#f8f4ff',
+    borderRadius: 8,
+    padding: 16,
+  },
+  balanceItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  balanceLabel: {
+    fontSize: 14,
+    color: '#666',
+  },
+  balanceAmount: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#6e39ea',
+  },
+  pendingBalance: {
+    color: '#ff9500',
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: 32,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 8,
+  },
+  orderCard: {
+    backgroundColor: '#f8f4ff',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+  },
+  orderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  orderNumber: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  orderDate: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4,
+  },
+  orderAmount: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#6e39ea',
+  },
+  
+  // Profile editing styles
+  editProfileContainer: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
+  editProfileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    backgroundColor: '#ffffff',
+  },
+  backButton: {
+    padding: 8,
+  },
+  editProfileTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  placeholder: {
+    width: 40,
+  },
+  editFormContainer: {
+    padding: 20,
+  },
+  formField: {
+    marginBottom: 20,
+  },
+  fieldLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  fieldInput: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    fontSize: 16,
+    backgroundColor: '#f9f9f9',
+  },
+  addressInput: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  verificationSection: {
+    marginBottom: 20,
+  },
+  verificationDisplay: {
+    marginTop: 8,
+  },
+  verificationContainer: {
+    marginTop: 8,
+  },
+  verificationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+  },
+  verificationText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginLeft: 6,
+  },
+  editIndicator: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  saveButton: {
+    backgroundColor: '#6e39ea',
+    borderRadius: 8,
+    paddingVertical: 15,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#cccccc',
+  },
+  saveButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  
+  // Modern Profile Card Styles
+  modernProfileCard: {
+    marginBottom: 20,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#6e39ea',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  profileCardGradient: {
+    padding: 20,
+    borderRadius: 20,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  avatarSection: {
+    position: 'relative',
+  },
+  modernAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#6e39ea',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  avatarInitial: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  onlineIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#30d158',
+    borderWidth: 3,
+    borderColor: 'white',
+  },
+  editButtonContainer: {
+    alignItems: 'center',
+  },
+  editButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  userDetailsSection: {
+    marginBottom: 16,
+  },
+  modernUserName: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 4,
+  },
+  modernUserEmail: {
+    fontSize: 16,
+    color: '#6e39ea',
+    marginBottom: 12,
+    fontWeight: '500',
+  },
+  contactInfoContainer: {
+    gap: 8,
+  },
+  contactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  contactIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#6e39ea15',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  contactText: {
+    fontSize: 15,
+    color: '#4a4a4a',
+    flex: 1,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  statusSection: {
+    flex: 1,
+  },
+  modernStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    alignSelf: 'flex-start',
+  },
+  statusIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  modernStatusText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  actionHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  actionText: {
+    fontSize: 14,
+    color: '#8e8e93',
+    fontWeight: '500',
+  },
+  
+  // Website Card Design Styles
+  websiteCard: {
+    borderRadius: 8, // rounded-lg
+    backgroundColor: '#ffffff', // bg-card
+    borderWidth: 1,
+    borderColor: '#e5e7eb', // border-gray-200
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05, // shadow-sm
+    shadowRadius: 2,
+    elevation: 2,
+    overflow: 'hidden',
+    marginBottom: 16,
+    minHeight: 120, // h-full equivalent
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  cardTitleSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  cardContent: {
+    flex: 1,
+    padding: 16,
+  },
+  
+  // Balance Card Styles
+  balanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  balanceInfo: {
+    flex: 1,
+  },
+  balanceLabel: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 4,
+  },
+  balanceAmount: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  balanceIcon: {
+    marginLeft: 12,
+  },
+  pendingSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#f3f4f6',
+  },
+  pendingInfo: {
+    flex: 1,
+  },
+  pendingLabel: {
+    fontSize: 13,
+    color: '#9ca3af',
+    marginBottom: 2,
+  },
+  pendingAmount: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#f59e0b',
+  },
+  
+  // Orders Card Styles
+  loadingState: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 24,
+    gap: 8,
+  },
+  loadingSpinner: {
+    // Add spinning animation if needed
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  emptyStateTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#374151',
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: '#9ca3af',
+    textAlign: 'center',
+  },
+  ordersListContainer: {
+    flex: 1,
+  },
+  orderItem: {
+    paddingVertical: 12,
+  },
+  orderItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  orderMainInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  orderNumberSection: {
+    flex: 1,
+  },
+  orderNumber: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  orderDate: {
+    fontSize: 13,
+    color: '#6b7280',
+  },
+  orderStatusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  orderStatusText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: 'white',
+  },
+  orderBottomInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  orderAmount: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6e39ea',
+  },
+  moreOrdersIndicator: {
+    paddingTop: 12,
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#f3f4f6',
+    alignItems: 'center',
+  },
+  moreOrdersText: {
+    fontSize: 13,
+    color: '#9ca3af',
+    fontWeight: '500',
+  },
+  
+  // Profile Content Container with Proper Padding
+  profileContentContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 20,
+  },
+
+  // Card Padding Container - Universal padding for all cards
+  cardPaddingContainer: {
+    padding: 20,
+  },
+
+  // Card Content with Proper Spacing
+  cardContentSpaced: {
+    gap: 24,
+  },
+
+  // Section Styles
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 12,
+  },
+
+  profileSection: {
+    marginBottom: 20,
+  },
+
+  sectionContent: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    padding: 16,
+  },
+
+  // Modern Profile Card Styles
+  profileCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  profileHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  modernAvatarContainer: {
+    position: 'relative',
+    marginRight: 12,
+  },
+  modernAvatarCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#6e39ea',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  onlineStatusDot: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#10b981',
+    borderWidth: 2,
+    borderColor: '#ffffff',
+  },
+  userBasicInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  userEmail: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  editButtonWrapper: {
+    padding: 8,
+  },
+  profileContentGrid: {
+    gap: 20,
+  },
+
+  // Spaced Profile Layout
+  infoRowSpaced: {
+    gap: 20,
+  },
+  infoItemSpaced: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 8,
+  },
+  statusItemSpaced: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 8,
+  },
+  infoIconWrapper: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#f3f4f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  statusIconWrapper: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#f3f4f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  infoTextContainer: {
+    flex: 1,
+  },
+  statusTextContainer: {
+    flex: 1,
+  },
+  infoLabel: {
+    fontSize: 12,
+    color: '#9ca3af',
+    marginBottom: 2,
+  },
+  statusLabel: {
+    fontSize: 12,
+    color: '#9ca3af',
+    marginBottom: 2,
+  },
+  infoValue: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  statusValue: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  balanceValueSmall: {
+    fontSize: 14,
+    color: '#6e39ea',
+    fontWeight: '600',
+  },
+  profileCardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#f3f4f6',
+    marginTop: 16,
+  },
+  editActionText: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+
+  // Modern Balance Card Styles
+  balanceMainSection: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+    marginBottom: 20,
+  },
+  balanceAmountContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 8,
+  },
+  balanceMainAmount: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  balanceCurrency: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#6b7280',
+    marginLeft: 6,
+  },
+  balanceMainLabel: {
+    fontSize: 16,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+
+  // Balance Stats Section
+  balanceStatsSection: {
+    marginBottom: 16,
+  },
+  balanceStatsGrid: {
+    gap: 16,
+  },
+  balanceStatCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
+  },
+  balanceStatIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#ffffff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  balanceStatInfo: {
+    flex: 1,
+  },
+  balanceStatLabel: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 4,
+  },
+  balanceStatValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  balanceStatDescription: {
+    fontSize: 12,
+    color: '#9ca3af',
+  },
+
+  // Modern Orders Card Styles
+  orderCountBadge: {
+    backgroundColor: '#6e39ea',
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    minWidth: 24,
+    textAlign: 'center',
+  },
+  modernLoadingState: {
+    alignItems: 'center',
+    paddingVertical: 24,
+  },
+  loadingIconContainer: {
+    marginBottom: 8,
+  },
+  loadingStateText: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  modernEmptyState: {
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  emptyStateIconContainer: {
+    marginBottom: 12,
+  },
+  emptyStateTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 4,
+  },
+  emptyStateDescription: {
+    fontSize: 14,
+    color: '#9ca3af',
+    textAlign: 'center',
+  },
+  modernOrdersList: {
+    gap: 24,
+  },
+
+  // Orders Overview Section
+  ordersOverviewSection: {
+    marginBottom: 20,
+  },
+  ordersStatsCardGrid: {
+    gap: 12,
+  },
+  orderStatCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
+  },
+  orderStatIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#ffffff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  orderStatInfo: {
+    flex: 1,
+  },
+  orderStatValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  orderStatLabel: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 2,
+  },
+  orderStatDescription: {
+    fontSize: 12,
+    color: '#9ca3af',
+  },
+
+  // Recent Orders Section
+  recentOrdersSection: {
+    marginBottom: 16,
+  },
+  recentOrdersContainer: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    padding: 16,
+  },
+  modernOrderItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  modernOrderItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  orderItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  orderItemIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    backgroundColor: '#f9fafb',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  orderItemDetails: {
+    flex: 1,
+  },
+  orderItemNumber: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  orderItemDate: {
+    fontSize: 12,
+    color: '#9ca3af',
+  },
+  orderItemRight: {
+    alignItems: 'flex-end',
+  },
+  orderItemAmount: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  orderItemStatus: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  orderItemStatusText: {
+    fontSize: 10,
+    fontWeight: '500',
+  },
+  viewMoreOrdersContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#f3f4f6',
+  },
+  viewMoreOrdersText: {
+    fontSize: 13,
+    color: '#6e39ea',
+    fontWeight: '500',
+  },
+
+  // Modern User Profile Card Styles
+  modernUserProfileCard: {
+    gap: 24,
+  },
+  userProfileHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  profileAvatarSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  largeAvatarContainer: {
+    position: 'relative',
+    marginRight: 16,
+  },
+  largeAvatarCircle: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#6e39ea',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#6e39ea',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  profileStatusDot: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#10b981',
+    borderWidth: 3,
+    borderColor: '#ffffff',
+  },
+  largeAvatarText: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  profileNameSection: {
+    flex: 1,
+  },
+  profileDisplayName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  profileEmailAddress: {
+    fontSize: 16,
+    color: '#6b7280',
+  },
+  profileEditButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#f3f4f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileInfoCards: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  profileInfoCard: {
+    flex: 1,
+    backgroundColor: '#f9fafb',
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profileInfoIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#ffffff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  profileInfoContent: {
+    flex: 1,
+  },
+  profileInfoLabel: {
+    fontSize: 12,
+    color: '#9ca3af',
+    marginBottom: 4,
+    fontWeight: '500',
+  },
+  profileInfoValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111827',
+  },
+
+  // Modern Orders Card Styles
+  modernOrdersCard: {
+    gap: 20,
+  },
+  ordersCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  ordersHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  ordersIconContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#f3f4f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  ordersHeaderText: {
+    flex: 1,
+  },
+  ordersCardTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  ordersCardSubtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  ordersCountBadge: {
+    backgroundColor: '#6e39ea',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    minWidth: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ordersCountText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  ordersCardContent: {
+    marginTop: 4,
+  },
+  beautifulOrderItem: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 12,
+  },
+  orderItemBorder: {
+    marginBottom: 16,
+  },
+  orderItemContent: {
+    gap: 16,
+  },
+  orderItemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  orderNumberSection: {
+    flex: 1,
+  },
+  orderNumber: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  orderDate: {
+    fontSize: 13,
+    color: '#6b7280',
+  },
+  orderStatusBadge: {
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  orderStatusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  orderItemFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  orderAmount: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  orderViewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 6,
+  },
+  orderViewText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6e39ea',
+  },
+  viewAllOrdersButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 16,
+    paddingVertical: 16,
+    marginTop: 8,
+    gap: 8,
+  },
+  viewAllOrdersText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6e39ea',
+  },
+
+  // Verification Pending Container Style
+  verificationPendingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+
+  // Order Details Screen Styles
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    flex: 1,
+  },
+  orderDetailsContainer: {
+    padding: 20,
+    gap: 20,
+  },
+  orderDetailsCard: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  orderDetailsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  orderDetailsIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#f3f4f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  orderDetailsHeaderText: {
+    flex: 1,
+  },
+  orderDetailsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  orderDetailsDate: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  orderDetailsStatusBadge: {
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  orderDetailsStatusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  orderSummaryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  orderSummaryTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  orderSummaryContent: {
+    gap: 12,
+  },
+  orderItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  orderItemInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  orderItemName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  orderItemQuantity: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  orderItemPrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#6e39ea',
+  },
+  noItemsText: {
+    fontSize: 16,
+    color: '#9ca3af',
+    textAlign: 'center',
+    paddingVertical: 20,
+  },
+  orderTotalSection: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 2,
+    borderTopColor: '#f3f4f6',
+  },
+  orderTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  orderTotalLabel: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  orderTotalAmount: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#6e39ea',
+  },
+  deliveryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  deliveryTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  deliveryContent: {
+    gap: 12,
+  },
+  deliveryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingVertical: 8,
+  },
+  deliveryLabel: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '500',
+    flex: 1,
+  },
+  deliveryValue: {
+    fontSize: 14,
+    color: '#111827',
+    fontWeight: '600',
+    flex: 2,
+    textAlign: 'right',
+  },
+  contactHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  contactTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  contactContent: {
+    gap: 12,
+  },
+  contactRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingVertical: 8,
+  },
+  contactLabel: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '500',
+    flex: 1,
+  },
+  contactValue: {
+    fontSize: 14,
+    color: '#111827',
+    fontWeight: '600',
+    flex: 2,
+    textAlign: 'right',
+  },
+  // Enhanced Order Details Styles
+  orderItemWithImage: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  orderItemImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    backgroundColor: '#f9fafb',
+  },
+  orderItemImagePlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    backgroundColor: '#f3f4f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  orderItemDetails: {
+    flex: 1,
+    gap: 4,
+  },
+  orderItemMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  orderItemId: {
+    fontSize: 12,
+    color: '#9ca3af',
+    fontStyle: 'italic',
+  },
+  // Delivery Tracking Styles
+  deliveryTrackingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 20,
+  },
+  deliveryTrackingTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  deliveryTrackingContent: {
+    gap: 20,
+  },
+  trackingSummary: {
+    gap: 16,
+  },
+  trackingInfoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#f8fafc',
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#6e39ea',
+  },
+  trackingInfoText: {
+    flex: 1,
+  },
+  trackingInfoLabel: {
+    fontSize: 12,
+    color: '#6b7280',
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  trackingInfoValue: {
+    fontSize: 16,
+    color: '#111827',
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  deliveryTimeline: {
+    marginTop: 8,
+  },
+  timelineTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 16,
+  },
+  timelineItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 16,
+  },
+  timelineIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  timelineIconCompleted: {
+    backgroundColor: '#6e39ea',
+  },
+  timelineIconPending: {
+    backgroundColor: '#e5e7eb',
+    borderWidth: 2,
+    borderColor: '#d1d5db',
+  },
+  timelineContent: {
+    flex: 1,
+    paddingTop: 4,
+  },
+  timelineLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  timelineDate: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  // Payment Information Styles
+  paymentInfoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  paymentInfoTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  paymentInfoContent: {
+    gap: 12,
+  },
+  paymentInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  paymentInfoLabel: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+  paymentInfoValue: {
+    fontSize: 14,
+    color: '#111827',
+    fontWeight: '600',
+  },
+  totalAmountText: {
+    fontSize: 18,
+    color: '#6e39ea',
+  },
+  // Shipping Address Styles
+  shippingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  shippingTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  shippingContent: {
+    gap: 12,
+  },
+  shippingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  shippingLabel: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+  shippingValue: {
+    fontSize: 14,
+    color: '#111827',
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'right',
+  },
+  // Shipping Information Styles
+  shippingInfoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  shippingInfoTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  shippingInfoContent: {
+    gap: 16,
+  },
+  shippingAddressCard: {
+    backgroundColor: '#f8fafc',
+    padding: 16,
+    borderRadius: 12,
+    gap: 12,
+  },
+  shippingInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingVertical: 4,
+  },
+  shippingInfoLabel: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '500',
+    flex: 1,
+  },
+  shippingInfoValue: {
+    fontSize: 14,
+    color: '#111827',
+    fontWeight: '600',
+    flex: 2,
+    textAlign: 'right',
+  },
+  // Notes Styles
+  notesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  notesTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  notesContent: {
+    backgroundColor: '#f8fafc',
+    padding: 16,
+    borderRadius: 12,
+  },
+  notesText: {
+    fontSize: 14,
+    color: '#374151',
+    lineHeight: 20,
+  },
+  // Product Display Styles
+  productsSection: {
+    padding: 20,
+  },
+  productsTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  productsScrollView: {
+    marginHorizontal: -20,
+  },
+  productsScrollContent: {
+    paddingHorizontal: 20,
+    gap: 15,
+  },
+  productsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    gap: 8,
+  },
+  gridProductCard: {
+    width: '48.5%',
+    backgroundColor: 'white',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 8,
+    overflow: 'hidden',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  gridProductImageContainer: {
+    position: 'relative',
+    width: '100%',
+    height: 160,
+    backgroundColor: '#f8f9fa',
+  },
+  gridProductImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  gridProductImagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#f5f5f7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  gridDiscountBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: '#ff3b30',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    shadowColor: '#ff3b30',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  gridDiscountText: {
+    color: 'white',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  gridProductInfo: {
+    padding: 14,
+    backgroundColor: 'white',
+  },
+  gridProductName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1c1c1e',
+    marginBottom: 10,
+    lineHeight: 17,
+    letterSpacing: 0.2,
+  },
+  gridPriceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  gridProductPrice: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#6e39ea',
+    letterSpacing: 0.3,
+  },
+  gridOldPrice: {
+    fontSize: 13,
+    color: '#8e8e93',
+    textDecorationLine: 'line-through',
+    marginLeft: 6,
+  },
+  productCard: {
+    width: 180,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    overflow: 'hidden',
+  },
+  productImageContainer: {
+    position: 'relative',
+    height: 160,
+    backgroundColor: '#f5f5f5',
+  },
+  productImage: {
+    width: '100%',
+    height: '100%',
+  },
+  productImagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+  },
+  discountBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: '#ff3b30',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  discountText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  productInfo: {
+    padding: 12,
+  },
+  productName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 8,
+    lineHeight: 18,
+  },
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  productPrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#6e39ea',
+  },
+  oldPrice: {
+    fontSize: 14,
+    color: '#999',
+    textDecorationLine: 'line-through',
+  },
+
+  // Modern Full-Height Animated Loader Styles
+  modernLoaderContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').height,
+    zIndex: 9999,
+  },
+  modernLoaderGradient: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  modernLoaderContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  modernLoaderIconContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  modernLoaderIconCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modernLoaderIcon: {
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  modernLoaderDots: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  modernLoaderDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  modernLoaderTextContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  modernLoaderMainText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+    textAlign: 'center',
+    marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+    letterSpacing: 0.5,
+  },
+  modernLoaderSubText: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  modernLoaderProgressContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  modernLoaderProgressTrack: {
+    width: '100%',
+    height: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  modernLoaderProgressFill: {
+    height: '100%',
+    backgroundColor: 'white',
+    borderRadius: 3,
+    shadowColor: '#fff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  modernLoaderProgressText: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '600',
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  modernLoaderShoppingElements: {
+    flexDirection: 'row',
+    gap: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modernLoaderShoppingItem: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+});
