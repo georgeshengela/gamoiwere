@@ -1,7 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import compression from "compression";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
 
 const app = express();
@@ -41,12 +40,17 @@ app.use((req, res, next) => {
     !path.includes("/payments/") &&
     !path.includes("/orders/");
 
-  res.on("finish", () => {
+  res.on("finish", async () => {
     const duration = Date.now() - start;
     if (shouldLog && path.startsWith("/api")) {
       // Only log basic request info without response data
       const logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      log(logLine);
+      if (process.env.NODE_ENV === "development") {
+        const { log } = await import("./vite.js");
+        log(logLine);
+      } else {
+        console.log(logLine);
+      }
     }
   });
 
@@ -67,9 +71,11 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
+  if (process.env.NODE_ENV === "development") {
+    const { setupVite } = await import("./vite.js");
     await setupVite(app, server);
   } else {
+    const { serveStatic } = await import("./vite.js");
     serveStatic(app);
   }
 

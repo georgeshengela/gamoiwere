@@ -4,7 +4,22 @@ services:
     name: gamoiwere-web-service
     env: node
     plan: starter
-    buildCommand: npm install && npm run build
+    buildFilter:
+      paths:
+        - package*.json
+        - client/**
+        - server/**
+        - shared/**
+        - public/**
+        - vite.config.ts
+        - tailwind.config.ts
+        - tsconfig.json
+        - postcss.config.js
+      ignoredPaths:
+        - '*.md'
+        - attached_assets/**
+        - gamoiwere-mobile/**
+    buildCommand: npm ci --silent --no-audit --no-fund && node build.js
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
