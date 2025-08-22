@@ -49,7 +49,8 @@ app.use((req, res, next) => {
         const { log } = await import("./vite.js");
         log(logLine);
       } else {
-        console.log(logLine);
+        const { log } = await import("./vite-prod.js");
+        log(logLine);
       }
     }
   });
@@ -75,7 +76,7 @@ app.use((req, res, next) => {
     const { setupVite } = await import("./vite.js");
     await setupVite(app, server);
   } else {
-    const { serveStatic } = await import("./vite.js");
+    const { serveStatic } = await import("./vite-prod.js");
     serveStatic(app);
   }
 
@@ -85,7 +86,13 @@ app.use((req, res, next) => {
     port,
     host: "0.0.0.0",
     reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
+  }, async () => {
+    if (process.env.NODE_ENV === "development") {
+      const { log } = await import("./vite.js");
+      log(`serving on port ${port}`);
+    } else {
+      const { log } = await import("./vite-prod.js");
+      log(`Production server running on port ${port}`);
+    }
   });
 })();
