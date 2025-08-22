@@ -13,7 +13,10 @@ async function build() {
     console.log('Frontend built successfully!');
 
     console.log('Building backend...');
-    await execAsync('esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --external:vite --external:@vitejs/plugin-react');
+    await execAsync('esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --external:vite --external:@vitejs/plugin-react --external:./vite.js --external:../vite.config');
+    
+    // Copy the vite-prod file separately 
+    await execAsync('cp server/vite-prod.ts dist/vite-prod.js');
     console.log('Backend built successfully!');
 
     console.log('Build completed!');
