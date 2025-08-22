@@ -34,7 +34,7 @@ COPY . .
 RUN ls -la attached_assets/ | head -5 && echo "✅ Assets found!" || echo "❌ attached_assets directory missing"
 
 # Build the application
-RUN npm run build
+RUN node build.js
 
 # Remove dev dependencies after build to reduce image size
 RUN npm prune --production --silent
