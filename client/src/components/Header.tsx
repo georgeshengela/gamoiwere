@@ -340,7 +340,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                       <div className="bg-gray-50 p-1.5 rounded-lg mr-2.5">
                         <Grid className="h-4 w-4 text-gray-600" />
                       </div>
-                      <span className="text-xs  uppercase tracking-wide text-gray-700">
+                      <span className="text-xs   tracking-wide text-gray-700">
                         კატეგორიები
                       </span>
                     </motion.div>
@@ -357,7 +357,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                       <div className="bg-pink-50 p-1.5 rounded-lg mr-2.5">
                         <User className="h-4 w-4 text-pink-600" />
                       </div>
-                      <span className="text-xs  uppercase tracking-wide text-gray-700">
+                      <span className="text-xs   tracking-wide text-gray-700">
                         ქალი
                       </span>
                     </Link>
@@ -374,7 +374,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                       <div className="bg-blue-50 p-1.5 rounded-lg mr-2.5">
                         <User className="h-4 w-4 text-blue-600" />
                       </div>
-                      <span className="text-xs  uppercase tracking-wide text-gray-700">
+                      <span className="text-xs   tracking-wide text-gray-700">
                         მამაკაცი
                       </span>
                     </Link>
@@ -391,7 +391,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                       <div className="bg-amber-50 p-1.5 rounded-lg mr-2.5">
                         <Baby className="h-4 w-4 text-amber-600" />
                       </div>
-                      <span className="text-xs  uppercase tracking-wide text-gray-700">
+                      <span className="text-xs   tracking-wide text-gray-700">
                         ბავშვები
                       </span>
                     </Link>
@@ -408,7 +408,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                       <div className="bg-indigo-50 p-1.5 rounded-lg mr-2.5">
                         <Smartphone className="h-4 w-4 text-indigo-600" />
                       </div>
-                      <span className="text-xs  uppercase tracking-wide text-gray-700">
+                      <span className="text-xs   tracking-wide text-gray-700">
                         ელექტრონიკა
                       </span>
                     </Link>
@@ -425,7 +425,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                       <div className="bg-emerald-50 p-1.5 rounded-lg mr-2.5">
                         <Home className="h-4 w-4 text-emerald-600" />
                       </div>
-                      <span className="text-xs  uppercase tracking-wide text-gray-700 whitespace-nowrap">
+                      <span className="text-xs   tracking-wide text-gray-700 whitespace-nowrap">
                         ტექნიკა და ავეჯი
                       </span>
                     </Link>
@@ -442,7 +442,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                       <div className="bg-rose-50 p-1.5 rounded-lg mr-2.5">
                         <Heart className="h-4 w-4 text-rose-600" />
                       </div>
-                      <span className="text-xs  uppercase tracking-wide text-gray-700">
+                      <span className="text-xs   tracking-wide text-gray-700">
                         სილამაზე
                       </span>
                     </Link>
@@ -459,7 +459,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                       <div className="bg-purple-50 p-1.5 rounded-lg mr-2.5">
                         <Baby className="h-4 w-4 text-purple-600" />
                       </div>
-                      <span className="text-xs  uppercase tracking-wide text-gray-700">
+                      <span className="text-xs   tracking-wide text-gray-700">
                         ორსულები
                       </span>
                     </Link>
@@ -476,7 +476,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                       <div className="bg-cyan-50 p-1.5 rounded-lg mr-2.5">
                         <Watch className="h-4 w-4 text-cyan-600" />
                       </div>
-                      <span className="text-xs  uppercase tracking-wide text-gray-700">
+                      <span className="text-xs   tracking-wide text-gray-700">
                         საათები
                       </span>
                     </Link>
