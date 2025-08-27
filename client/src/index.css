@@ -136,11 +136,14 @@
   }
 
   body {
-    @apply bg-white text-foreground font-sansgeo;
+    background-color: white;
+    color: hsl(var(--foreground));
+    font-family: 'noto-sans-georgian', 'MarkGEO-Regular', system-ui,
+      -apple-system, sans-serif;
   }
 
   .caps {
-    @apply font-markgeocaps;
+    font-family: 'MarkGEOCAPS-Regular', sans-serif;
   }
 
   .product-card:hover {
