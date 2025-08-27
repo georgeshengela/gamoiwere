@@ -105,33 +105,32 @@
   --radius: 0.5rem;
 }
 
-@font-face {
-  font-family: 'MarkGEO-Regular';
-  src: url('https://webstatic.bog.ge/fonts/markgeo/MarkGEO-Regular/MarkGEO-Regular.ttf')
-    format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'noto-sans-georgian';
-  src: url('/NotoSansGeorgian-VariableFont_wdth,wght.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'MarkGEOCAPS-Regular';
-  src: url('https://webstatic.bog.ge/fonts/markgeo/MarkGEOCAPS-Regular/MarkGEO-Regular.ttf')
-    format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
 @layer base {
+  @font-face {
+    font-family: 'MarkGEO-Regular';
+    src: url('https://webstatic.bog.ge/fonts/markgeo/MarkGEO-Regular/MarkGEO-Regular.ttf')
+      format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: 'noto-sans-georgian';
+    src: url('/NotoSansGeorgian-VariableFont_wdth,wght.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: 'MarkGEOCAPS-Regular';
+    src: url('https://webstatic.bog.ge/fonts/markgeo/MarkGEOCAPS-Regular/MarkGEO-Regular.ttf')
+      format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
   * {
     border-color: hsl(var(--border));
   }
