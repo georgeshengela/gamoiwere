@@ -39,9 +39,9 @@ const FlyingParcels = () => {
         animation: fall 8s linear forwards;
         text-shadow: 0 1px 2px rgba(0,0,0,0.3);
       `;
-      
+
       parcelsRef.current.appendChild(parcel);
-      
+
       setTimeout(() => {
         if (parcel.parentNode) {
           parcel.parentNode.removeChild(parcel);
@@ -50,7 +50,7 @@ const FlyingParcels = () => {
     };
 
     const interval = setInterval(createParcel, 1500);
-    
+
     // Add CSS animation if not already added
     if (!document.querySelector('#parcel-animation')) {
       const style = document.createElement('style');
@@ -70,12 +70,16 @@ const FlyingParcels = () => {
     };
   }, []);
 
-  return <div ref={parcelsRef} className="fixed inset-0 pointer-events-none z-10" />;
+  return (
+    <div ref={parcelsRef} className="fixed inset-0 pointer-events-none z-10" />
+  );
 };
 
 export default function MobilePage() {
   const [, setLocation] = useLocation();
-  const [currentScreen, setCurrentScreen] = useState<'login' | 'register' | 'otp' | 'success'>('login');
+  const [currentScreen, setCurrentScreen] = useState<
+    'login' | 'register' | 'otp' | 'success'
+  >('login');
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [registerForm, setRegisterForm] = useState<RegisterData>({
     username: '',
@@ -83,7 +87,7 @@ export default function MobilePage() {
     phone: '',
     password: '',
     confirmPassword: '',
-    terms: false
+    terms: false,
   });
   const [otpCode, setOtpCode] = useState('');
   const [pendingPhone, setPendingPhone] = useState('');
@@ -100,13 +104,16 @@ export default function MobilePage() {
     try {
       const token = localStorage.getItem('authToken');
       if (token) {
-        const response = await fetch(`${API_BASE_URL}/api/mobile/auth/verify-token`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+        const response = await fetch(
+          `${API_BASE_URL}/api/mobile/auth/verify-token`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
           }
-        });
+        );
 
         if (response.ok) {
           const userData = await response.json();
@@ -135,7 +142,7 @@ export default function MobilePage() {
       const response = await fetch(`${API_BASE_URL}/api/mobile/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(loginForm)
+        body: JSON.stringify(loginForm),
       });
 
       const result = await response.json();
@@ -154,7 +161,13 @@ export default function MobilePage() {
   };
 
   const handleRegister = async () => {
-    if (!registerForm.username || !registerForm.email || !registerForm.phone || !registerForm.password || !registerForm.confirmPassword) {
+    if (
+      !registerForm.username ||
+      !registerForm.email ||
+      !registerForm.phone ||
+      !registerForm.password ||
+      !registerForm.confirmPassword
+    ) {
       alert('გთხოვთ შეავსოთ ყველა ველი');
       return;
     }
@@ -174,7 +187,7 @@ export default function MobilePage() {
       const response = await fetch(`${API_BASE_URL}/api/mobile/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(registerForm)
+        body: JSON.stringify(registerForm),
       });
 
       const result = await response.json();
@@ -200,11 +213,14 @@ export default function MobilePage() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/mobile/auth/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: pendingPhone, code: otpCode })
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/mobile/auth/verify-otp`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: pendingPhone, code: otpCode }),
+        }
+      );
 
       const result = await response.json();
       if (response.ok) {
@@ -219,7 +235,7 @@ export default function MobilePage() {
             phone: '',
             password: '',
             confirmPassword: '',
-            terms: false
+            terms: false,
           });
         }, 3000);
       } else {
@@ -248,7 +264,10 @@ export default function MobilePage() {
             alt="GAMOIWERE"
             className="w-48 h-24 mx-auto mb-4 object-contain filter drop-shadow-lg"
           />
-          <p className="text-white text-lg font-medium" style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif' }}>
+          <p
+            className="text-white text-lg font-medium"
+            style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif' }}
+          >
             იტვირთება...
           </p>
         </div>
@@ -266,14 +285,17 @@ export default function MobilePage() {
             alt="GAMOIWERE"
             className="w-48 h-24 mx-auto mb-8 object-contain filter drop-shadow-lg"
           />
-          
-          <h1 className="text-white text-3xl font-bold mb-4" style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif' }}>
+
+          <h1
+            className="text-white text-3xl font-bold mb-4"
+            style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif' }}
+          >
             მოგესალმებით!
           </h1>
           <p className="text-purple-200 text-xl mb-8">
             {user?.full_name || user?.username}
           </p>
-          
+
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8 text-center">
             <p className="text-green-300 text-lg mb-2">
               ✓ წარმატებით შეხვედით სისტემაში
@@ -298,7 +320,7 @@ export default function MobilePage() {
     <div className="min-h-screen bg-gradient-to-br from-purple-600 to-purple-800 relative overflow-hidden">
       {/* Flying Parcels Animation */}
       <FlyingParcels />
-      
+
       <div className="min-h-screen flex items-center justify-center p-4 relative z-20">
         <div className="w-full max-w-md">
           {/* Logo Section */}
@@ -308,7 +330,10 @@ export default function MobilePage() {
               alt="GAMOIWERE"
               className="w-64 h-32 mx-auto mb-4 object-contain filter drop-shadow-lg"
             />
-            <p className="text-white text-lg font-medium" style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif', letterSpacing: '2px' }}>
+            <p
+              className="text-white text-lg font-medium"
+              style={{ letterSpacing: '2px' }}
+            >
               იშოპინგე მარტივად
             </p>
           </div>
@@ -321,9 +346,11 @@ export default function MobilePage() {
                   type="text"
                   placeholder="მომხმარებლის სახელი ან ელ-ფოსტა"
                   value={loginForm.username}
-                  onChange={(e) => setLoginForm({...loginForm, username: e.target.value})}
+                  onChange={(e) =>
+                    setLoginForm({ ...loginForm, username: e.target.value })
+                  }
                   className="w-full p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-white/30"
-                  style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif', letterSpacing: '1px' }}
+                  style={{ letterSpacing: '1px' }}
                 />
               </div>
 
@@ -332,9 +359,11 @@ export default function MobilePage() {
                   type="password"
                   placeholder="პაროლი"
                   value={loginForm.password}
-                  onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                  onChange={(e) =>
+                    setLoginForm({ ...loginForm, password: e.target.value })
+                  }
                   className="w-full p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-white/30"
-                  style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif', letterSpacing: '1px' }}
+                  style={{ letterSpacing: '1px' }}
                 />
               </div>
 
@@ -360,63 +389,86 @@ export default function MobilePage() {
           {/* Register Form */}
           {currentScreen === 'register' && (
             <div className="space-y-4">
-              <h2 className="text-white text-2xl font-bold text-center mb-6" style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif' }}>
+              <h2
+                className="text-white text-2xl font-bold text-center mb-6"
+                style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif' }}
+              >
                 რეგისტრაცია
               </h2>
-              
+
               <input
                 type="text"
                 placeholder="მომხმარებლის სახელი"
                 value={registerForm.username}
-                onChange={(e) => setRegisterForm({...registerForm, username: e.target.value})}
+                onChange={(e) =>
+                  setRegisterForm({ ...registerForm, username: e.target.value })
+                }
                 className="w-full p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-white/30"
-                style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif', letterSpacing: '1px' }}
+                style={{ letterSpacing: '1px' }}
               />
 
               <input
                 type="email"
                 placeholder="ელ-ფოსტა"
                 value={registerForm.email}
-                onChange={(e) => setRegisterForm({...registerForm, email: e.target.value})}
+                onChange={(e) =>
+                  setRegisterForm({ ...registerForm, email: e.target.value })
+                }
                 className="w-full p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-white/30"
-                style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif', letterSpacing: '1px' }}
+                style={{ letterSpacing: '1px' }}
               />
 
               <input
                 type="tel"
                 placeholder="ტელეფონის ნომერი (+995555123456)"
                 value={registerForm.phone}
-                onChange={(e) => setRegisterForm({...registerForm, phone: e.target.value})}
+                onChange={(e) =>
+                  setRegisterForm({ ...registerForm, phone: e.target.value })
+                }
                 className="w-full p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-white/30"
-                style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif', letterSpacing: '1px' }}
+                style={{ letterSpacing: '1px' }}
               />
 
               <input
                 type="password"
                 placeholder="პაროლი"
                 value={registerForm.password}
-                onChange={(e) => setRegisterForm({...registerForm, password: e.target.value})}
+                onChange={(e) =>
+                  setRegisterForm({ ...registerForm, password: e.target.value })
+                }
                 className="w-full p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-white/30"
-                style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif', letterSpacing: '1px' }}
+                style={{ letterSpacing: '1px' }}
               />
 
               <input
                 type="password"
                 placeholder="პაროლის დადასტურება"
                 value={registerForm.confirmPassword}
-                onChange={(e) => setRegisterForm({...registerForm, confirmPassword: e.target.value})}
+                onChange={(e) =>
+                  setRegisterForm({
+                    ...registerForm,
+                    confirmPassword: e.target.value,
+                  })
+                }
                 className="w-full p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-white/30"
-                style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif', letterSpacing: '1px' }}
+                style={{ letterSpacing: '1px' }}
               />
 
               <label className="flex items-center space-x-3 text-white">
                 <input
                   type="checkbox"
                   checked={registerForm.terms}
-                  onChange={(e) => setRegisterForm({...registerForm, terms: e.target.checked})}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      terms: e.target.checked,
+                    })
+                  }
                   className="w-5 h-5 rounded border-white/20 bg-white/10 text-purple-600 focus:ring-purple-500"
                 />
-                <span style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif' }}>ვეთანხმები წესებს და პირობებს</span>
+                <span style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif' }}>
+                  ვეთანხმები წესებს და პირობებს
+                </span>
               </label>
 
               <button
@@ -441,11 +493,17 @@ export default function MobilePage() {
           {/* OTP Verification */}
           {currentScreen === 'otp' && (
             <div className="space-y-6">
-              <h2 className="text-white text-2xl font-bold text-center mb-6" style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif' }}>
+              <h2
+                className="text-white text-2xl font-bold text-center mb-6"
+                style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif' }}
+              >
                 ვერიფიკაციის კოდი
               </h2>
-              
-              <p className="text-purple-200 text-center mb-6" style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif' }}>
+
+              <p
+                className="text-purple-200 text-center mb-6"
+                style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif' }}
+              >
                 შეიყვანეთ კოდი რომელიც გაიგზავნა ნომერზე {pendingPhone}
               </p>
 
@@ -453,7 +511,9 @@ export default function MobilePage() {
                 type="text"
                 placeholder="6-ნიშნა კოდი"
                 value={otpCode}
-                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onChange={(e) =>
+                  setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))
+                }
                 className="w-full p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-white/30 text-center text-2xl tracking-widest"
                 style={{ fontFamily: 'monospace' }}
                 maxLength={6}
@@ -484,10 +544,16 @@ export default function MobilePage() {
               <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-white text-4xl">✓</span>
               </div>
-              <h2 className="text-white text-2xl font-bold" style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif' }}>
+              <h2
+                className="text-white text-2xl font-bold"
+                style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif' }}
+              >
                 რეგისტრაცია წარმატებულია!
               </h2>
-              <p className="text-purple-200" style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif' }}>
+              <p
+                className="text-purple-200"
+                style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif' }}
+              >
                 თქვენი ანგარიში შეიქმნა. ახლა შეგიძლიათ შეხვიდეთ სისტემაში.
               </p>
             </div>
@@ -495,7 +561,10 @@ export default function MobilePage() {
 
           {/* Footer */}
           <div className="text-center mt-8">
-            <p className="text-purple-200 text-sm" style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif' }}>
+            <p
+              className="text-purple-200 text-sm"
+              style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif' }}
+            >
               © 2025 GAMOIWERE.GE
             </p>
           </div>

@@ -1,36 +1,36 @@
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 const Newsletter = () => {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
       toast({
-        title: "შეცდომა",
-        description: "გთხოვთ შეიყვანოთ ელ-ფოსტა",
-        variant: "destructive",
+        title: 'შეცდომა',
+        description: 'გთხოვთ შეიყვანოთ ელ-ფოსტა',
+        variant: 'destructive',
       });
       return;
     }
 
     // Here you would typically send the email to your server
     toast({
-      title: "წარმატება!",
-      description: "თქვენ წარმატებით გამოიწერეთ სიახლეები",
+      title: 'წარმატება!',
+      description: 'თქვენ წარმატებით გამოიწერეთ სიახლეები',
     });
-    setEmail("");
+    setEmail('');
   };
 
   return (
     <section className="bg-primary rounded-lg p-8 mb-12">
       <div className="flex flex-col md:flex-row items-center justify-between">
         <div className="mb-6 md:mb-0 text-center md:text-left">
-          <h2 className="text-white text-2xl font-bold mb-2 caps">
+          <h2 className="text-white text-2xl font-bold mb-2 ">
             გამოიწერეთ სიახლეები
           </h2>
           <p className="text-white/80">

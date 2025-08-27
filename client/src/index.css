@@ -19,11 +19,11 @@
 
 /* Hide scrollbar but maintain functionality */
 .hide-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 .hide-scrollbar::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari and Opera */
+  display: none; /* Chrome, Safari and Opera */
 }
 
 /* Text truncation utilities for mobile cart */
@@ -55,22 +55,6 @@
   max-height: calc(100vh - 150px);
   overflow-y: auto;
   padding-right: 0.5rem;
-}
-
-@font-face {
-  font-family: 'MarkGEO-Regular';
-  src: url('https://webstatic.bog.ge/fonts/markgeo/MarkGEO-Regular/MarkGEO-Regular.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'MarkGEOCAPS-Regular';
-  src: url('https://webstatic.bog.ge/fonts/markgeo/MarkGEOCAPS-Regular/MarkGEOCAPS-Regular.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
 }
 
 :root {
@@ -121,32 +105,58 @@
   --radius: 0.5rem;
 }
 
+@font-face {
+  font-family: 'MarkGEO-Regular';
+  src: url('https://webstatic.bog.ge/fonts/markgeo/MarkGEO-Regular/MarkGEO-Regular.ttf')
+    format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'noto-sans-georgian';
+  src: url('/NotoSansGeorgian-VariableFont_wdth,wght.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'MarkGEOCAPS-Regular';
+  src: url('https://webstatic.bog.ge/fonts/markgeo/MarkGEOCAPS-Regular/MarkGEO-Regular.ttf')
+    format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
 
   body {
-    @apply bg-white text-foreground font-markgeo;
+    @apply bg-white text-foreground font-sansgeo;
   }
 
   .caps {
     @apply font-markgeocaps;
   }
-  
+
   .product-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   }
-  
+
   .product-card {
     transition: all 0.3s ease;
   }
-  
+
   /* Button hover effect */
   .btn-primary:hover,
   .hover:btn-primary:hover,
-  button[data-state="open"]:where(.btn,.btn-primary),
+  button[data-state='open']:where(.btn, .btn-primary),
   .bg-primary:hover {
     background-color: hsl(var(--primary-hover)) !important;
     border-color: hsl(var(--primary-hover)) !important;
@@ -182,15 +192,15 @@
   .order-2.md\:order-1::-webkit-scrollbar {
     height: 3px;
   }
-  
+
   .order-2.md\:order-1::-webkit-scrollbar-thumb {
     background-color: rgba(128, 128, 128, 0.3);
   }
-  
+
   .order-2.md\:order-1 .scrollbar-thin::-webkit-scrollbar {
     height: 3px;
   }
-  
+
   .order-2.md\:order-1 .scrollbar-thin::-webkit-scrollbar-thumb {
     background-color: rgba(128, 128, 128, 0.3);
   }
@@ -211,7 +221,7 @@
 }
 
 /* Fix inline CSS issues from Radix UI components */
-input[aria-hidden="true"] {
+input[aria-hidden='true'] {
   transform: translateX(-100%) !important;
   position: absolute !important;
   pointer-events: none !important;
@@ -219,4 +229,74 @@ input[aria-hidden="true"] {
   margin: 0 !important;
   width: 16px !important;
   height: 16px !important;
+}
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Modern minimal scrollbar */
+.scrollbar-minimal {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+}
+
+.scrollbar-minimal::-webkit-scrollbar {
+  width: 2px;
+  height: 2px;
+}
+
+.scrollbar-minimal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-minimal::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 1px;
+  transition: background-color 0.2s ease;
+}
+
+.scrollbar-minimal::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Custom scrollbar for browsers that support it */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Category card hover effect */
+.category-card {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }

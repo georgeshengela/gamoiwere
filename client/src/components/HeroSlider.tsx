@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Slide {
   id: number;
@@ -43,13 +43,16 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
   }, [currentSlide]);
 
   return (
-    <div className="mb-8 relative overflow-hidden rounded-lg shadow-lg" style={{ height: "300px" }}>
+    <div
+      className="mb-8 relative overflow-hidden rounded-lg shadow-lg"
+      style={{ height: '300px' }}
+    >
       {/* Progress bar */}
       <div className="absolute top-0 left-0 right-0 z-30 h-1 bg-gray-200 bg-opacity-20">
-        <div 
+        <div
           className="h-full bg-primary transition-all duration-300 ease-linear"
-          style={{ 
-            width: `${(currentSlide + 1) / slides.length * 100}%`,
+          style={{
+            width: `${((currentSlide + 1) / slides.length) * 100}%`,
           }}
         />
       </div>
@@ -58,11 +61,11 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
         <div
           key={slide.id}
           className={`absolute inset-0 z-10 transition-all duration-700 ease-in-out ${
-            index === currentSlide 
-              ? "opacity-100 translate-x-0" 
-              : index < currentSlide 
-                ? "opacity-0 -translate-x-full" 
-                : "opacity-0 translate-x-full"
+            index === currentSlide
+              ? 'opacity-100 translate-x-0'
+              : index < currentSlide
+              ? 'opacity-0 -translate-x-full'
+              : 'opacity-0 translate-x-full'
           }`}
         >
           <img
@@ -79,7 +82,9 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
           <button
             key={index}
             className={`h-1.5 rounded-full bg-white transition-all duration-300 ${
-              index === currentSlide ? "w-8 opacity-100" : "w-4 opacity-50 hover:opacity-75"
+              index === currentSlide
+                ? 'w-8 opacity-100'
+                : 'w-4 opacity-50 hover:opacity-75'
             }`}
             onClick={() => goToSlide(index)}
           />
