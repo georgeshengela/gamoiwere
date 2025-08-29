@@ -9,6 +9,8 @@ import RegisterPage from '@/pages/RegisterPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import CartPage from '@/pages/CartPage';
 import BrandPage from '@/pages/BrandPage';
+import BrandsPage from '@/pages/BrandsPage';
+import RecommendedPage from '@/pages/RecommendedPage';
 import ProfilePage from '@/pages/ProfilePage';
 import OrdersPage from '@/pages/OrdersPage';
 import OrderDetailPage from '@/pages/OrderDetailPage';
@@ -138,6 +140,8 @@ function App() {
               <Route path="/product/:id" component={ProductDetail} />
               <Route path="/category/:id" component={CategoryPage} />
               <Route path="/brand/:brandName" component={BrandPage} />
+              <Route path="/brands" component={BrandsPage} />
+              <Route path="/recommended" component={RecommendedPage} />
               <Route path="/cart" component={CartPage} />
               <Route path="/checkout" component={CheckoutPage} />
               <Route path="/profile" component={ProfilePage} />

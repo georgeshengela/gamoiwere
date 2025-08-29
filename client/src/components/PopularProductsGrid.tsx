@@ -1,23 +1,26 @@
-import { ChevronRight, TrendingUp } from "lucide-react";
-import ProductCard from "@/components/ui/product-card";
-import { usePopularProducts } from "@/hooks/usePopularProducts";
-import { useToast } from "@/hooks/use-toast";
-import { addItemToCart } from "@/utils/cartUtils";
-import { Loader } from "@/components/ui/loader";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { ChevronRight, TrendingUp } from 'lucide-react';
+import ProductCard from '@/components/ui/product-card';
+import { usePopularProducts } from '@/hooks/usePopularProducts';
+import { useToast } from '@/hooks/use-toast';
+import { addItemToCart } from '@/utils/cartUtils';
+import { Loader } from '@/components/ui/loader';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 interface PopularProductsGridProps {
   title: string;
   viewAllLink?: string;
 }
 
-const PopularProductsGrid = ({ title, viewAllLink = "#" }: PopularProductsGridProps) => {
+const PopularProductsGrid = ({
+  title,
+  viewAllLink = '#',
+}: PopularProductsGridProps) => {
   const { products, loading, error } = usePopularProducts();
   const { toast } = useToast();
 
   const handleAddToCart = (productId: string | number) => {
-    const product = products.find(p => p.Id === productId);
+    const product = products.find((p) => p.Id === productId);
     if (product) {
       addItemToCart({
         id: product.Id,
@@ -25,23 +28,23 @@ const PopularProductsGrid = ({ title, viewAllLink = "#" }: PopularProductsGridPr
         price: product.Price,
         imageUrl: product.MainPictureUrl,
       });
-      
+
       toast({
-        title: "პროდუქტი დამატებულია",
-        description: "პროდუქტი წარმატებით დაემატა კალათაში",
+        title: 'პროდუქტი დამატებულია',
+        description: 'პროდუქტი წარმატებით დაემატა კალათაში',
       });
     }
   };
 
   const handleAddToWishlist = (productId: string | number) => {
     toast({
-      title: "პროდუქტი დამატებულია",
-      description: "პროდუქტი წარმატებით დაემატა სასურველებში",
+      title: 'პროდუქტი დამატებულია',
+      description: 'პროდუქტი წარმატებით დაემატა სასურველებში',
     });
   };
 
   // Format products to match our component structure
-  const formattedProducts = products.map(product => ({
+  const formattedProducts = products.map((product) => ({
     id: product.Id,
     name: product.Title,
     originalTitle: product.OriginalTitle || product.Title, // Add original Turkish title for translation
@@ -51,7 +54,7 @@ const PopularProductsGrid = ({ title, viewAllLink = "#" }: PopularProductsGridPr
     imageUrl: product.MainPictureUrl,
     stockCount: product.MasterQuantity,
     sign: product.Sign,
-    totalSales: product.basketCount || Math.floor(Math.random() * 1000) // Use basketCount if available or fallback to random
+    totalSales: product.basketCount || Math.floor(Math.random() * 1000), // Use basketCount if available or fallback to random
   }));
 
   return (
@@ -59,7 +62,9 @@ const PopularProductsGrid = ({ title, viewAllLink = "#" }: PopularProductsGridPr
       <div className="flex justify-between items-center mb-4 md:mb-6">
         <div className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-[#5b38ed]" />
-          <h2 className="text-[16px] md:text-[20px] font-bold text-gray-900 uppercase" style={{ fontFamily: 'MarkGEOCAPS-Regular, sans-serif' }}>{title}</h2>
+          <h2 className="text-[16px] md:text-[20px] font-bold text-gray-900 uppercase">
+            {title}
+          </h2>
         </div>
         <a
           href={viewAllLink}

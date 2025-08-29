@@ -79,7 +79,7 @@ const ProductCard = ({
 
   return (
     <div
-      className={`product-card group bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100 hover:border-primary transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${
+      className={`product-card group cursor-pointer bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100 hover:border-primary transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${
         !inStock ? 'opacity-75' : ''
       }`}
     >

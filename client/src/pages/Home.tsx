@@ -30,7 +30,7 @@ const Home = () => {
 
       <RecommendedProductsGrid
         title="რეკომენდირებული"
-        viewAllLink="/products/recommended"
+        viewAllLink="/recommended"
       />
 
       {/* Promotion Banner */}

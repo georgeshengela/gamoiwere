@@ -340,7 +340,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                       <div className="bg-gray-50 p-1.5 rounded-lg mr-2.5">
                         <Grid className="h-4 w-4 text-gray-600" />
                       </div>
-                      <span className="text-xs   tracking-wide text-gray-700">
+                      <span className="text-md uppercase tracking-wide text-gray-700">
                         კატეგორიები
                       </span>
                     </motion.div>
@@ -357,7 +357,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                       <div className="bg-pink-50 p-1.5 rounded-lg mr-2.5">
                         <User className="h-4 w-4 text-pink-600" />
                       </div>
-                      <span className="text-xs   tracking-wide text-gray-700">
+                      <span className="text-md  uppercase tracking-wide text-gray-700">
                         ქალი
                       </span>
                     </Link>
@@ -374,7 +374,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                       <div className="bg-blue-50 p-1.5 rounded-lg mr-2.5">
                         <User className="h-4 w-4 text-blue-600" />
                       </div>
-                      <span className="text-xs   tracking-wide text-gray-700">
+                      <span className="text-md  uppercase tracking-wide text-gray-700">
                         მამაკაცი
                       </span>
                     </Link>
@@ -391,7 +391,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                       <div className="bg-amber-50 p-1.5 rounded-lg mr-2.5">
                         <Baby className="h-4 w-4 text-amber-600" />
                       </div>
-                      <span className="text-xs   tracking-wide text-gray-700">
+                      <span className="text-md  uppercase tracking-wide text-gray-700">
                         ბავშვები
                       </span>
                     </Link>
@@ -408,7 +408,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                       <div className="bg-indigo-50 p-1.5 rounded-lg mr-2.5">
                         <Smartphone className="h-4 w-4 text-indigo-600" />
                       </div>
-                      <span className="text-xs   tracking-wide text-gray-700">
+                      <span className="text-md  uppercase tracking-wide text-gray-700">
                         ელექტრონიკა
                       </span>
                     </Link>
@@ -425,7 +425,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                       <div className="bg-emerald-50 p-1.5 rounded-lg mr-2.5">
                         <Home className="h-4 w-4 text-emerald-600" />
                       </div>
-                      <span className="text-xs   tracking-wide text-gray-700 whitespace-nowrap">
+                      <span className="text-md  uppercase tracking-wide text-gray-700 whitespace-nowrap">
                         ტექნიკა და ავეჯი
                       </span>
                     </Link>
@@ -442,7 +442,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                       <div className="bg-rose-50 p-1.5 rounded-lg mr-2.5">
                         <Heart className="h-4 w-4 text-rose-600" />
                       </div>
-                      <span className="text-xs   tracking-wide text-gray-700">
+                      <span className="text-md  uppercase tracking-wide text-gray-700">
                         სილამაზე
                       </span>
                     </Link>
@@ -459,7 +459,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                       <div className="bg-purple-50 p-1.5 rounded-lg mr-2.5">
                         <Baby className="h-4 w-4 text-purple-600" />
                       </div>
-                      <span className="text-xs   tracking-wide text-gray-700">
+                      <span className="text-md  uppercase tracking-wide text-gray-700">
                         ორსულები
                       </span>
                     </Link>
@@ -476,7 +476,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                       <div className="bg-cyan-50 p-1.5 rounded-lg mr-2.5">
                         <Watch className="h-4 w-4 text-cyan-600" />
                       </div>
-                      <span className="text-xs   tracking-wide text-gray-700">
+                      <span className="text-md  uppercase tracking-wide text-gray-700">
                         საათები
                       </span>
                     </Link>
@@ -622,7 +622,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                 <Avatar className="h-16 w-16 mb-2">
                   <AvatarImage alt={user?.username} />
                   <AvatarFallback className="bg-primary text-white text-lg">
-                    {user?.username?.charAt(0) || 'U'}
+                    {user?.username?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="text-center">
@@ -690,7 +690,9 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
 
           {/* Categories */}
           <div className="p-4">
-            <h3 className="text-[14px] tracking-wider mb-4">კატეგორიები</h3>
+            <h3 className="text-[14px] uppercase tracking-wider mb-4">
+              კატეგორიები
+            </h3>
             <div className="overflow-x-auto pb-4 scrollbar-none">
               <ul className="flex md:grid md:grid-cols-3 lg:grid-cols-4 gap-4 min-w-max md:min-w-0">
                 <motion.li
@@ -710,7 +712,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                     >
                       <Home className="h-6 w-6 text-blue-600" />
                     </motion.div>
-                    <span className="text-[13px] tracking-wide text-gray-700">
+                    <span className=" text-[13px] uppercase tracking-wide text-gray-700">
                       მთავარი
                     </span>
                   </Link>
@@ -733,7 +735,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                     >
                       <Smartphone className="h-6 w-6 text-purple-600" />
                     </motion.div>
-                    <span className="text-[13px] tracking-wide text-gray-700">
+                    <span className=" text-[13px] uppercase tracking-wide text-gray-700">
                       სმარტფონები
                     </span>
                   </Link>
@@ -756,7 +758,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                     >
                       <Laptop className="h-6 w-6 text-teal-600" />
                     </motion.div>
-                    <span className="text-[13px] tracking-wide text-gray-700">
+                    <span className=" text-[13px] uppercase tracking-wide text-gray-700">
                       ლეპტოპები
                     </span>
                   </Link>
@@ -779,7 +781,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                     >
                       <Headphones className="h-6 w-6 text-indigo-600" />
                     </motion.div>
-                    <span className="text-[13px] tracking-wide text-gray-700">
+                    <span className=" text-[13px] uppercase tracking-wide text-gray-700">
                       აუდიო
                     </span>
                   </Link>
@@ -802,7 +804,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                     >
                       <Tv className="h-6 w-6 text-emerald-600" />
                     </motion.div>
-                    <span className="text-[13px] tracking-wide text-gray-700">
+                    <span className=" text-[13px] uppercase tracking-wide text-gray-700">
                       ტელევიზორები
                     </span>
                   </Link>
@@ -825,7 +827,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                     >
                       <Watch className="h-6 w-6 text-cyan-600" />
                     </motion.div>
-                    <span className="text-[13px] tracking-wide text-gray-700">
+                    <span className=" text-[13px] uppercase tracking-wide text-gray-700">
                       სმარტ საათები
                     </span>
                   </Link>
@@ -848,7 +850,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                     >
                       <Gamepad className="h-6 w-6 text-rose-600" />
                     </motion.div>
-                    <span className="text-[13px] tracking-wide text-gray-700">
+                    <span className=" text-[13px] uppercase tracking-wide text-gray-700">
                       გეიმინგი
                     </span>
                   </Link>
@@ -871,7 +873,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                     >
                       <Tablet className="h-6 w-6 text-amber-600" />
                     </motion.div>
-                    <span className="text-[13px] tracking-wide text-gray-700">
+                    <span className=" text-[13px] uppercase tracking-wide text-gray-700">
                       ტაბლეტები
                     </span>
                   </Link>
@@ -894,7 +896,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                     >
                       <Camera className="h-6 w-6 text-lime-600" />
                     </motion.div>
-                    <span className="text-[13px] tracking-wide text-gray-700">
+                    <span className=" text-[13px] uppercase tracking-wide text-gray-700">
                       კამერები
                     </span>
                   </Link>
@@ -917,7 +919,7 @@ const Header = ({ onLoginClick, onRegisterClick }: HeaderProps) => {
                     >
                       <TagIcon className="h-6 w-6 text-red-600" />
                     </motion.div>
-                    <span className="text-[13px] tracking-wide text-red-600">
+                    <span className=" text-[13px] uppercase tracking-wide text-red-600">
                       ფასდაკლებები
                     </span>
                   </Link>
